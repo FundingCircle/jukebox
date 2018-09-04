@@ -18,6 +18,17 @@
   "Used to track and provide state between steps."
   (atom nil))
 
+(defn update-world
+  "Checks whether the `world` object appears to have been dropped, and
+  prints an error if so."
+  [f]
+  (fn [world & args]
+    (let [new-world (apply f world args)]
+      (when-not (::world? new-world)
+        (log/errorf "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)"))
+      new-world)))
+
+
 (defn- location
   "Returns a string repr of the file and line number of the var."
   [v]
@@ -38,7 +49,7 @@
   (getParameterCount [_] nil)
 
   (execute [_ locale args]
-    (swap! world (fn [world] (apply step-fn world args))))
+    (swap! world (update-world (fn [world] (apply step-fn world args)))))
 
   (isDefinedAt [_ stack-trace-element]
     (let [{:keys [file line]} (meta step-fn)]
@@ -54,13 +65,14 @@
     (location hook-fn))
 
   (execute [hd scenario]
-    (swap! world (fn [world]
-                   (hook-fn world {:status (.getStatus scenario)
-                                   :failed? (.isFailed scenario)
-                                   :name (.getName scenario)
-                                   :id (.getId scenario)
-                                   :uri (.getUri scenario)
-                                   :lines (.getLines scenario)}))))
+    (swap! world (update-world
+                  (fn [world]
+                    (hook-fn world {:status (.getStatus scenario)
+                                    :failed? (.isFailed scenario)
+                                    :name (.getName scenario)
+                                    :id (.getId scenario)
+                                    :uri (.getUri scenario)
+                                    :lines (.getLines scenario)})))))
   (matches [hd tags]
     (.apply tag-predicate tags))
 
@@ -168,13 +180,18 @@
   [[] nil])
 
 (defn- -loadGlue [this glue glue-paths]
-  (doseq [glue-path glue-paths]
-    (juke/register juke-backend (juke/hooks glue-path)))
+  (log/debugf "Glue paths: %s" glue-paths)
+  (if (= 0 (count glue-paths))
+    (juke/register juke-backend (juke/hooks))
+    (doseq [glue-path glue-paths]
+      (juke/register juke-backend (juke/hooks glue-path))))
   (swap! definitions set-glue glue))
 
-(defn- -buildWorld [_])
+(defn- -buildWorld [_]
+  (reset! world {::world? true}))
 
-(defn- -disposeWorld [_] (reset! world nil))
+(defn- -disposeWorld [_]
+  (reset! world {::world? true}))
 
 (defn- -getSnippet
   [_ step keyword _]
