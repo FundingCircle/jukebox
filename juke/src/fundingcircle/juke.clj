@@ -59,11 +59,11 @@
    (defn ^:scene/before setup
      \"Initializes systems under test.\"
      {:scene/tags [\"tag-a\" \"tag-b\"]}
-     [ctx])
+     [ctx scenario])
 
    (defn ^:scene/after teardown
      \"Tears down the test system.\"
-     [ctx])
+     [ctx scenario])
    ```"
   (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]

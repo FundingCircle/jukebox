@@ -1,4 +1,4 @@
-(defproject juke-cucumber "0.1.0-SNAPSHOT"
+(defproject fundingcircle/juke-cucumber "0.1.0-SNAPSHOT"
   :description "Cucumber backend for juke."
   :url "https://github.com/fundingcircle/blackbox"
   :license {:name "Eclipse Public License"
