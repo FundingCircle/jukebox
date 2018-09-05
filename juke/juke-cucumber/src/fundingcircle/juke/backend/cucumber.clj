@@ -180,7 +180,7 @@
   [[] nil])
 
 (defn- -loadGlue [this glue glue-paths]
-  (log/debugf "Glue paths: %s" glue-paths)
+  (log/infof "Glue paths: %s" glue-paths)
   (if (= 0 (count glue-paths))
     (juke/register juke-backend (juke/hooks))
     (doseq [glue-path glue-paths]
