@@ -1,6 +1,17 @@
+<<<<<<< HEAD
 # Blackbox tests
 
 This is a refinement and globalization of [us-blackbox](https://github.com/fundingcircle/us-blackbox).
+=======
+# Jukebox
+
+## About
+
+Jukebox is a Cucumber-Clojure test framework used for testing Funding Circle
+authored software. It is a refinement and globalization of
+[us-jukebox](https://github.com/fundingcircle/us-jukebox). The vision and
+features for the project are:
+>>>>>>> 7953535... Logging improvements
 
 ## Vision & Features
 * Teams can author tests on timelines that match their product's
@@ -13,6 +24,7 @@ This is a refinement and globalization of [us-blackbox](https://github.com/fundi
 * Support red/yellow/green test status
 * Support eUATs
 
+<<<<<<< HEAD
 ## Running the tests
 You'll need to link your cvseeds:
 ```
@@ -49,3 +61,36 @@ This includes screenshots, javascript logs, HTML, and clojure code containing fi
 ```
 cat diagnostics/steps/*.clj | pbcopy
 ```
+=======
+## Documentation
+
+The [reference manual](doc/reference-manual.md) is the primary source for
+information about the project.
+
+## Communication
+
+Collaboration happens in the Slack channel
+[#a-jukebox-channel](https://fundingcircle.slack.com/messages/CCBT1L7UY).
+
+## Scrum
+
+Bugs and tasks are maintained in the Jira project
+[Global Test](https://jira.fundingcircle.com/projects/GT).
+Board name is Global Test.
+
+## Test Results
+
+Tests are built and run using [Jenkins](https://jenkins.fc-staging.us/job/jukebox-test/).
+
+## Releases
+
+Information about builds is in [changelog](doc/changelog.md).
+
+## Requirements
+
+Project requirements reside in [doc/requirements](doc/requirements).
+
+## Contributions
+
+Your participation and [contributions](doc/contributions.md) are encouraged and greatly appreciated!
+>>>>>>> 7953535... Logging improvements

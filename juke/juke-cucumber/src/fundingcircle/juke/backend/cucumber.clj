@@ -86,7 +86,7 @@
 (defn- add-step
   "Adds a step to glue. If glue is nil, queues it up to be added later."
   [{:keys [glue] :as definitions} pattern step-fn]
-  (log/infof "Adding step: %s" [glue pattern])
+  (log/debugf "Adding step: %s" [glue pattern])
   (if glue
     (do
       (.addStepDefinition glue (->JukeStepDefinition pattern step-fn))
@@ -180,7 +180,7 @@
   [[] nil])
 
 (defn- -loadGlue [this glue glue-paths]
-  (log/infof "Glue paths: %s" glue-paths)
+  (log/debugf "Glue paths: %s" glue-paths)
   (if (= 0 (count glue-paths))
     (juke/register juke-backend (juke/hooks))
     (doseq [glue-path glue-paths]

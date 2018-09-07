@@ -105,7 +105,7 @@
   specified."
   ([] (mapcat hooks (all-ns)))
   ([source]
-   (log/infof "Loading hooks from source: %s" source)
+   (log/debugf "Loading hooks from source: %s" source)
    (find-hooks source)))
 
 (defprotocol JukeBackend
@@ -128,18 +128,18 @@
   (doseq [hook-fn hook-fns]
     (let [m (meta hook-fn)]
       (when (:scene/step m)
-        (log/infof "Registering step: %s" hook-fn)
+        (log/debugf "Registering step: %s" hook-fn)
         (register-step backend (:scene/step m) hook-fn))
 
       (when (:scene/steps m)
         (doseq [step (:scene/steps m)]
-          (log/infof "Registering step: %s" hook-fn)
+          (log/debugf "Registering step: %s" hook-fn)
           (register-step backend (:scene/step m) hook-fn)))
 
       (when (:scene/before m)
-        (log/infof "Registering before hook: %s" hook-fn)
+        (log/debugf "Registering before hook: %s" hook-fn)
         (register-before-hook backend (:scene/tags m) hook-fn))
 
       (when (:scene/after m)
-        (log/infof "Registering after hook: %s" hook-fn)
+        (log/debugf "Registering after hook: %s" hook-fn)
         (register-after-hook backend (:scene/tags m) hook-fn)))))
