@@ -164,14 +164,14 @@
   (template [_]
     (str
      "(defn {2}\n"
-     "  \"Returns an updated `ctx`.\"\n"
+     "  \"Returns an updated context (`board`).\"\n"
      "  '{':scene/step \"{1}\"'}'\n"
      "  [{3}]\n"
      "  ;; {4}\n"
      "  (throw (cucumber.api.PendingException.)))\n"))
   (tableHint [_] nil)
   (arguments [_ args]
-    (str/join " " (cons "ctx" (keys args))))
+    (str/join " " (cons "board" (keys args))))
   (escapePattern [_ pattern]
     (str/replace (str pattern) "\"" "\\\"")))
 

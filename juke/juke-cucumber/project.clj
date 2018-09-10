@@ -1,4 +1,4 @@
-(defproject fundingcircle/juke-cucumber "0.1.0"
+(defproject fundingcircle/juke-cucumber "0.1.1"
   :description "Cucumber backend for juke."
   :url "https://github.com/fundingcircle/blackbox"
   :license {:name "Eclipse Public License"
@@ -8,7 +8,7 @@
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
                                          "test/features"]}}}
-  :dependencies [[fundingcircle/juke "0.1.0"]
+  :dependencies [[fundingcircle/juke "0.1.1"]
                  [io.cucumber/cucumber-core "3.0.2"]
                  [io.cucumber/cucumber-junit "3.0.2"]
                  [org.clojure/clojure "1.9.0"]
