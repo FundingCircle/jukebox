@@ -153,7 +153,6 @@
     (swap! definitions add-before-step-hook hook-fn))
 
   (register-after-step-hook [_ hook-fn]
-    (log/warnf "Registering :scene/after-step: %s" (meta hook-fn))
     (swap! definitions add-after-step-hook hook-fn)))
 
 (def juke-backend
