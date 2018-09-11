@@ -16,23 +16,23 @@ Feature: Belly
 Clojure functions can be mapped to each step by tagging it with `:scene/step`:
 ```clojure
 (defn i-have-cukes-in-my-belly
-  "Returns an updated `ctx`."
+  "Returns an updated `board`."
   {:scene/step "I have {int} cukes in my belly"}
-  [ctx cukes]
+  [board cukes]
   ;; Write code here that turns the phrase above into concrete actions
   (throw (cucumber.api.PendingException.)))
 
 (defn i-wait-hours
-  "Returns an updated `ctx`."
+  "Returns an updated `board`."
   {:scene/step "I wait {int} hours"}
-  [ctx hours]
+  [board hours]
   ;; Write code here that turns the phrase above into concrete actions
   (throw (cucumber.api.PendingException.)))
 
 (defn my-belly-should-growl
-  "Returns an updated `ctx`."
+  "Returns an updated `board`."
   {:scene/step "my belly should growl"}
-  [ctx]
+  [board]
   ;; Write code here that turns the phrase above into concrete actions
   (throw (cucumber.api.PendingException.)))
 ```
@@ -40,11 +40,11 @@ Clojure functions can be mapped to each step by tagging it with `:scene/step`:
 Functions with multiple arities can also be tagged. (Clojure allows metadata to be placed after the function body. This example uses that style.)
 ```clojure
 (defn i-wait-hours
-  "Returns an updated `ctx`."
-  ([ctx]
+  "Returns an updated `board`."
+  ([board]
    ;; Write code here that turns the phrase above into concrete actions
    (throw (cucumber.api.PendingException.)))
-  ([ctx hours]
+  ([board hours]
    ;; Write code here that turns the phrase above into concrete actions
    (throw (cucumber.api.PendingException.)))
 
@@ -59,9 +59,21 @@ A list of tags can also be provided.
 (defn ^:scene/before setup
   "Initializes systems under test."
   {:scene/tags ["tag-a" "tag-b"]}
-  [ctx scenario])
+  [board scenario])
 
 (defn ^:scene/after teardown
   "Tears down the test system."
-  [ctx scenario])
+  [board scenario])
+```
+
+A function can be registered to be run before or after each step by
+tagging it with `:scene/before-step` or `:scene/after-step`:
+```clojure
+(defn ^:scene/before-step before-step
+  "Runs before each scenario step."
+  [board])
+
+(defn ^:scene/after-step after-step
+  "Runs after each scenario step."
+  [board])
 ```

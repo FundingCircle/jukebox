@@ -1,5 +1,5 @@
-(ns fundingcircle.juke
-  "Integrates instrumented clojure functions with juke backends.
+ (ns fundingcircle.juke
+   "Integrates instrumented clojure functions with juke backends.
 
    Here's an example feature:
    ```
@@ -14,37 +14,37 @@
    Clojure functions can be mapped to each step by tagging it with `:scene/step`:
    ```
    (defn i-have-cukes-in-my-belly
-     \"Returns an updated `ctx`.\"
+     \"Returns an updated `board`.\"
      {:scene/step \"I have {int} cukes in my belly\"}
-     [ctx cukes]
+     [board cukes]
      ;; Write code here that turns the phrase above into concrete actions
      (throw (cucumber.api.PendingException.)))
 
    (defn i-wait-hours
-     \"Returns an updated `ctx`.\"
+     \"Returns an updated `board`.\"
      {:scene/step \"I wait {int} hours\"}
-     [ctx hours]
+     [board hours]
      ;; Write code here that turns the phrase above into concrete actions
      (throw (cucumber.api.PendingException.)))
 
    (defn my-belly-should-growl
-     \"Returns an updated `ctx`.\"
+     \"Returns an updated `board`.\"
      {:scene/step \"my belly should growl\"}
-     [ctx]
+     [board]
      ;; Write code here that turns the phrase above into concrete actions
      (throw (cucumber.api.PendingException.)))
    ```
 
    Functions with multiple arities can also be tagged. (Clojure allows
-  metadata to be placed after the function body. This example uses
-  that style.)
+   metadata to be placed after the function body. This example uses
+   that style.)
    ```
    (defn i-wait-hours
-     \"Returns an updated `ctx`.\"
-     ([ctx]
+     \"Returns an updated `board`.\"
+     ([board]
       ;; Write code here that turns the phrase above into concrete actions
       (throw (cucumber.api.PendingException.)))
-     ([ctx hours]
+     ([board hours]
       ;; Write code here that turns the phrase above into concrete actions
       (throw (cucumber.api.PendingException.)))
 
@@ -53,28 +53,45 @@
    ```
 
    Functions can be registered to run before or after a scenario by
-  tagging them with `:scene/before` or `:scene/after` (or both).  A
-  list of tags can also be provided.
+   tagging them with `:scene/before` or `:scene/after` (or both).  A
+   list of tags can also be provided.
    ```
    (defn ^:scene/before setup
      \"Initializes systems under test.\"
      {:scene/tags [\"tag-a\" \"tag-b\"]}
-     [ctx scenario])
+     [board scenario])
 
    (defn ^:scene/after teardown
      \"Tears down the test system.\"
-     [ctx scenario])
-   ```"
-  (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
-            [clojure.tools.namespace.find :as find]))
+     [board scenario])
+   ```
+
+   A function can be registered to be run before or after each step by
+   tagging it with `:scene/before-step` or `:scene/after-step`:
+   ```clojure
+   (defn ^:scene/before-step before-step
+     \"Runs before each scenario step.\"
+     [board])
+
+   (defn ^:scene/after-step after-step
+     \"Runs after each scenario step.\"
+     [board])
+    ```"
+   (:require [clojure.java.io :as io]
+             [clojure.tools.logging :as log]
+             [clojure.tools.namespace.find :as find]))
 
 (defn- scene-related?
   "Checks whether a var is tagged with any scene related metadata."
   [v]
   (->> (meta v)
        (keys)
-       (some #{:scene/step :scene/steps :scene/before :scene/after})))
+       (some #{:scene/step
+               :scene/steps
+               :scene/before
+               :scene/after
+               :scene/before-step
+               :scene/after-step})))
 
 (defn- require-namespaces-in-dir
   "Scan namespaces in a dir and require them."
@@ -114,13 +131,21 @@
     [_ pattern step-fn]
     "Called to register a step function.")
 
-  (register-before-hook
+  (register-before-scene-hook
     [_ tags hook-fn]
-    "Called to register a before hook.")
+    "Called to register a :scene/before hook.")
 
-  (register-after-hook
+  (register-after-scene-hook
     [_ tags hook-fn]
-    "Called to register an after hook."))
+    "Called to register a :scene/after hook.")
+
+  (register-before-step-hook
+    [_ hook-fn]
+    "Called to register a :scene/before-step hook.")
+
+  (register-after-step-hook
+    [_ hook-fn]
+    "Called to register a :scene/after-step hook."))
 
 (defn register
   "Registers the given step/hook functions with the backend."
@@ -137,9 +162,17 @@
           (register-step backend (:scene/step m) hook-fn)))
 
       (when (:scene/before m)
-        (log/debugf "Registering before hook: %s" hook-fn)
-        (register-before-hook backend (:scene/tags m) hook-fn))
+        (log/debugf "Registering :scene/before hook: %s" hook-fn)
+        (register-before-scene-hook backend (:scene/tags m) hook-fn))
 
       (when (:scene/after m)
-        (log/debugf "Registering after hook: %s" hook-fn)
-        (register-after-hook backend (:scene/tags m) hook-fn)))))
+        (log/debugf "Registering :scene/after hook: %s" hook-fn)
+        (register-after-scene-hook backend (:scene/tags m) hook-fn))
+
+      (when (:scene/before-step m)
+        (log/debugf "Registering :scene/before-step hook: %s", hook-fn)
+        (register-before-step-hook backend hook-fn))
+
+      (when (:scene/after-step m)
+        (log/debugf "Registering :scene/after-step hook: %s", hook-fn)
+        (register-after-step-hook backend hook-fn)))))

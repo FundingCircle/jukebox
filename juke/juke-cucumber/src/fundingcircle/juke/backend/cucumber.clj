@@ -18,6 +18,9 @@
   "Used to track and provide state between steps."
   (atom nil))
 
+(defonce definitions
+  (atom {:glue nil :steps [] :before [] :after [] :before-step [] :after-step []}))
+
 (defn update-world
   "Checks whether the `world` object appears to have been dropped, and
   prints an error if so."
@@ -35,7 +38,7 @@
   (let [{:keys [file line]} (meta v)]
     (str file ":" line)))
 
-(deftype JukeStepDefinition [pattern step-fn]
+(deftype JukeStepDefinition [pattern step-fn step-meta]
   cucumber.runtime.StepDefinition
   (matchedArguments [_ step]
     (.argumentsFrom
@@ -49,7 +52,24 @@
   (getParameterCount [_] nil)
 
   (execute [_ locale args]
-    (swap! world (update-world (fn [world] (apply step-fn world args)))))
+    ;; call before-steps
+    (doseq [{:keys [hook-fn]} (:before-step @definitions)]
+      (swap! world (update-world (fn [world] (hook-fn world)))))
+
+    ;; call step
+    (try
+      (swap! world (update-world (fn [world] (apply step-fn
+                                                    (assoc world :scene/step step-meta)
+                                                    args))))
+      (catch Throwable e
+        (swap! world assoc :scene/exception e)))
+
+    ;; call after-steps
+    (doseq [{:keys [hook-fn]} (:after-step @definitions)]
+      (swap! world (update-world (fn [world] (hook-fn world)))))
+
+    (when-let [e (:scene/exception @world)]
+      (throw e)))
 
   (isDefinedAt [_ stack-trace-element]
     (let [{:keys [file line]} (meta step-fn)]
@@ -80,21 +100,18 @@
 
   (isScenarioScoped [hd] false))
 
-(defonce definitions
-  (atom {:glue nil :steps [] :before [] :after []}))
-
 (defn- add-step
   "Adds a step to glue. If glue is nil, queues it up to be added later."
   [{:keys [glue] :as definitions} pattern step-fn]
   (log/debugf "Adding step: %s" [glue pattern])
   (if glue
     (do
-      (.addStepDefinition glue (->JukeStepDefinition pattern step-fn))
+      (.addStepDefinition glue (->JukeStepDefinition pattern step-fn (meta step-fn)))
       definitions)
     (update definitions :steps conj {:pattern pattern :step-fn step-fn})))
 
-(defn- add-before-hook
-  "Adds a before hook to glue. If glue is nil, queues it up to be added later."
+(defn- add-before-scene-hook
+  "Adds a :scene/before hook to glue. If glue is nil, queues it up to be added later."
   [{:keys [glue] :as definitions} tags hook-fn]
   (if glue
     (do
@@ -102,8 +119,8 @@
       definitions)
     (update definitions :before conj {:tags tags :hook-fn hook-fn})))
 
-(defn- add-after-hook
-  "Adds an after hook to glue. If glue is nil, queues it up to be added later."
+(defn- add-after-scene-hook
+  "Adds a :scene/after hook to glue. If glue is nil, queues it up to be added later."
   [{:keys [glue] :as definitions} tags hook-fn]
   (if glue
     (do
@@ -111,16 +128,33 @@
       definitions)
     (update definitions :after conj {:tags tags :hook-fn hook-fn})))
 
+(defn- add-before-step-hook
+  "Adds a :scene/before-step hook to glue. If glue is nil, queues it up to be added later."
+  [definitions hook-fn]
+  (update definitions :before-step conj {:hook-fn hook-fn}))
+
+(defn- add-after-step-hook
+  "Adds a :scene/after-step hook to glue. If glue is nil, queues it up to be added later."
+  [definitions hook-fn]
+  (update definitions :after-step conj {:hook-fn hook-fn}))
+
 (deftype CucumberJukeBackend []
   JukeBackend
   (register-step [_ pattern step-fn]
     (swap! definitions add-step pattern step-fn))
 
-  (register-before-hook [_ tags hook-fn]
-    (swap! definitions add-before-hook tags hook-fn))
+  (register-before-scene-hook [_ tags hook-fn]
+    (swap! definitions add-before-scene-hook tags hook-fn))
 
-  (register-after-hook [_ tags hook-fn]
-    (swap! definitions add-after-hook tags hook-fn)))
+  (register-after-scene-hook [_ tags hook-fn]
+    (swap! definitions add-after-scene-hook tags hook-fn))
+
+  (register-before-step-hook [_ hook-fn]
+    (swap! definitions add-before-step-hook hook-fn))
+
+  (register-after-step-hook [_ hook-fn]
+    (log/warnf "Registering :scene/after-step: %s" (meta hook-fn))
+    (swap! definitions add-after-step-hook hook-fn)))
 
 (def juke-backend
   "A juke cucumber backend."
@@ -129,15 +163,15 @@
 (defn- set-glue
   "Sets the cucumber glue instance. Registers any steps, before hooks
   and after hooks that were queued before glue was initialized."
-  [definitions glue]
+  [{:keys [before-step after-step] :as definitions} glue]
   (let [{:keys [steps before after] :as definitions} (assoc definitions :glue glue)]
     (doseq [{:keys [pattern step-fn]} steps]
       (add-step definitions pattern step-fn))
     (doseq [{:keys [tags hook-fn]} before]
-      (add-before-hook definitions tags hook-fn))
+      (add-before-scene-hook definitions tags hook-fn))
     (doseq [{:keys [tags hook-fn]} after]
-      (add-after-hook definitions tags hook-fn)))
-  {:glue glue :steps [] :before [] :after []})
+      (add-after-scene-hook definitions tags hook-fn)))
+  {:glue glue :steps [] :before [] :after [] :before-step before-step :after-step after-step})
 
 (deftype ClojureFnName []
   cucumber.runtime.snippets.Concatenator

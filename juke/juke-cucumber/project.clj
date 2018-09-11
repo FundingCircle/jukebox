@@ -1,6 +1,6 @@
-(defproject fundingcircle/juke-cucumber "0.1.1"
+(defproject fundingcircle/juke-cucumber "0.1.2"
   :description "Cucumber backend for juke."
-  :url "https://github.com/fundingcircle/blackbox"
+  :url "https://github.com/fundingcircle/jukebox"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot [fundingcircle.juke.backend.cucumber]
@@ -8,12 +8,12 @@
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
                                          "test/features"]}}}
-  :dependencies [[fundingcircle/juke "0.1.1"]
+  :dependencies [[fundingcircle/juke "0.1.2"]
                  [io.cucumber/cucumber-core "3.0.2"]
                  [io.cucumber/cucumber-junit "3.0.2"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]]
-:repositories [["clojars"
+  :repositories [["clojars"
                   "https://clojars.org/repo/"]
                  ["snapshots"
                   {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
