@@ -1,7 +1,7 @@
 (defproject fundingcircle/juke "0.1.2"
   :description "A simple library that hooks clojure into BDD frameworks such
 as cucumber."
-  :url "https://github.com/fundingcircle/jukebox"
+  :url "https://github.com/fundingcircle/jukebox/juke"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0"]
