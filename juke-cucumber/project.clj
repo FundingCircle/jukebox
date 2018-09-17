@@ -1,6 +1,6 @@
 (defproject fundingcircle/juke-cucumber "0.1.2"
   :description "Cucumber backend for juke."
-  :url "https://github.com/fundingcircle/jukebox/juke-cucumber"
+  :url "https://github.com/fundingcircle/jukebox/tree/master/juke-cucumber"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot [fundingcircle.juke.backend.cucumber]
@@ -13,13 +13,12 @@
                  [io.cucumber/cucumber-junit "3.0.2"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]]
-  :repositories [["clojars"
-                  "https://clojars.org/repo/"]
-                 ["snapshots"
-                  {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
-                   :username [:gpg :env/artifactory_user]
-                   :password [:gpg :env/artifactory_password]}]
-                 ["releases"
-                  {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
-                   :username [:gpg :env/artifactory_user]
-                   :password [:gpg :env/artifactory_password]}]])
+  :repositories ["snapshots" {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-snapshot"
+                              :username [:gpg :env/artifactory_user]
+                              :password [:gpg :env/artifactory_password]
+                              :sign-releases false}
+
+                 "releases" {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release"
+                             :username [:gpg :env/artifactory_user]
+                             :password [:gpg :env/artifactory_password]
+                             :sign-releases false}])

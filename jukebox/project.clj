@@ -1,5 +1,6 @@
 (defproject fundingcircle.jukebox "0.1.0"
   :description "Bundle of useful Funding Circle test tooling."
+  :url "https://github.com/fundingcircle/jukebox/tree/master/jukebox"
   :source-paths ["src"]
   :profiles {:dev {:source-paths ["src"]}}
   :dependencies [[avro-schemas/avro-schemas "5.4472.0"]
