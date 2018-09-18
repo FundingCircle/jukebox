@@ -13,12 +13,12 @@
                  [io.cucumber/cucumber-junit "3.0.2"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]]
-  :repositories ["snapshots" {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-snapshot"
+  :repositories {"snapshots" {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-snapshot"
+                               :username [:gpg :env/artifactory_user]
+                               :password [:gpg :env/artifactory_password]
+                               :sign-releases false}
+
+                  "releases" {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release"
                               :username [:gpg :env/artifactory_user]
                               :password [:gpg :env/artifactory_password]
-                              :sign-releases false}
-
-                 "releases" {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release"
-                             :username [:gpg :env/artifactory_user]
-                             :password [:gpg :env/artifactory_password]
-                             :sign-releases false}])
+                              :sign-releases false}})
