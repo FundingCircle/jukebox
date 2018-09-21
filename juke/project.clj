@@ -1,4 +1,4 @@
-(defproject fundingcircle/juke "0.1.2"
+(defproject fundingcircle/juke "0.1.3-SNAPSHOT"
   :description "A simple library that hooks clojure into BDD frameworks such
 as cucumber."
   :url "https://github.com/fundingcircle/jukebox/tree/master/juke"
@@ -7,6 +7,7 @@ as cucumber."
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/tools.namespace "0.2.11"]]
+  :pedantic? :warn
   :repositories [["snapshots"
                   {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                    :username [:gpg :env/artifactory_user]
