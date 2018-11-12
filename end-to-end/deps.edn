@@ -14,8 +14,7 @@
            jukebox                   {:local/root "../jukebox"}
            org.clojure/clojure       {:mvn/version "1.9.0"}
            org.clojure/tools.logging {:mvn/version "0.4.1"}
-           },
+           }
 
- :paths ["src" "src/fundingcircle/end_to_end"],
-
+ :paths   ["src" "src/fundingcircle/end_to_end" "resources" "target/classes"]
  }
