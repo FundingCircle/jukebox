@@ -1,6 +1,9 @@
+.cpcache
 .cvseeds
 .lein*
 .repo
 target
 diagnostics
 .nrepl-port
+cucumber
+pom.xml
