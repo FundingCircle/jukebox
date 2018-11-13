@@ -40,5 +40,5 @@
                                            {:mvn/version "3.2.1", :exclusions [log4j org.slf4j/slf4j-log4j12]},
          com.amazonaws/aws-java-sdk-s3     {:mvn/version "1.11.155"}},
 
- :paths ["src" "resources" "target/classes"]
+ :paths ["src" "resources" "classes"]
  }
