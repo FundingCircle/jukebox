@@ -1,44 +1,51 @@
 {
+ :deps      {
+             juke                              {:local/root "../juke"},
+             juke-cucumber                     {:local/root "../juke-cucumber"},
+             org.clojure/clojure               {:mvn/version "1.9.0"},
+             com.amazonaws/aws-java-sdk-athena {:mvn/version "1.11.155"},
+             clojure.java-time                 {:mvn/version "0.3.2"},
+             org.clojure/tools.logging         {:mvn/version "0.4.1"},
+             com.cemerick/url                  {:mvn/version "0.1.1"},
+             com.taoensso/encore               {:mvn/version "2.96.0"},
+             camel-snake-kebab                 {:mvn/version "0.4.0"},
+             org.postgresql/postgresql         {:mvn/version "42.1.4"},
+             lynxeyes/dotenv                   {:mvn/version "1.0.2"},
+             com.jcabi/jcabi-log               {:mvn/version "0.18"},
+             fundingcircle/topic.metadata      {:mvn/version "0.294.0"},
+             org.clojure/java.jdbc             {:mvn/version "0.7.8"},
+             org.clojars.matthiasmargush/etaoin
+                                               {:mvn/version "0.2.8-SNAPSHOT",
+                                                :exclusions
+                                                             [com.fasterxml.jackson.dataformat/jackson-dataformat-cbor]},
+             clj-http                          {:mvn/version "3.9.0"},
+             avro-schemas
+                                               {:mvn/version "5.4472.0",
+                                                :exclusions  [log4j org.slf4j/slf4j-log4j12]},
+             io.forward/yaml                   {:mvn/version "1.0.9"},
+             fundingcircle/jackdaw-serdes
+                                               {:mvn/version "0.3.20",
+                                                :exclusions
+                                                             [io.confluent/kafka-avro-serializer
+                                                              io.confluent/common-config
+                                                              org.apache.avro/avro
+                                                              environ
+                                                              com.fasterxml.jackson.core/jackson-databind
+                                                              com.thoughtworks.paranamer/paranamer
+                                                              org.slf4j/slf4j-api
+                                                              org.apache.commons/commons-compress
+                                                              com.fasterxml.jackson.core/jackson-core]},
+             io.confluent/kafka-avro-serializer
+                                               {:mvn/version "3.2.1", :exclusions [log4j org.slf4j/slf4j-log4j12]},
+             com.amazonaws/aws-java-sdk-s3     {:mvn/version "1.11.155"}
+             }
 
- :deps
-        {juke                              {:local/root "../juke"},
-         juke-cucumber                     {:local/root "../juke-cucumber"},
-         org.clojure/clojure               {:mvn/version "1.9.0"},
-         com.amazonaws/aws-java-sdk-athena {:mvn/version "1.11.155"},
-         clojure.java-time                 {:mvn/version "0.3.2"},
-         org.clojure/tools.logging         {:mvn/version "0.4.1"},
-         com.cemerick/url                  {:mvn/version "0.1.1"},
-         com.taoensso/encore               {:mvn/version "2.96.0"},
-         camel-snake-kebab                 {:mvn/version "0.4.0"},
-         org.postgresql/postgresql         {:mvn/version "42.1.4"},
-         lynxeyes/dotenv                   {:mvn/version "1.0.2"},
-         com.jcabi/jcabi-log               {:mvn/version "0.18"},
-         fundingcircle/topic.metadata      {:mvn/version "0.294.0"},
-         org.clojure/java.jdbc             {:mvn/version "0.7.8"},
-         org.clojars.matthiasmargush/etaoin
-                                           {:mvn/version "0.2.8-SNAPSHOT",
-                                            :exclusions
-                                                         [com.fasterxml.jackson.dataformat/jackson-dataformat-cbor]},
-         clj-http                          {:mvn/version "3.9.0"},
-         avro-schemas
-                                           {:mvn/version "5.4472.0",
-                                            :exclusions  [log4j org.slf4j/slf4j-log4j12]},
-         io.forward/yaml                   {:mvn/version "1.0.9"},
-         fundingcircle/jackdaw-serdes
-                                           {:mvn/version "0.3.20",
-                                            :exclusions
-                                                         [io.confluent/kafka-avro-serializer
-                                                          io.confluent/common-config
-                                                          org.apache.avro/avro
-                                                          environ
-                                                          com.fasterxml.jackson.core/jackson-databind
-                                                          com.thoughtworks.paranamer/paranamer
-                                                          org.slf4j/slf4j-api
-                                                          org.apache.commons/commons-compress
-                                                          com.fasterxml.jackson.core/jackson-core]},
-         io.confluent/kafka-avro-serializer
-                                           {:mvn/version "3.2.1", :exclusions [log4j org.slf4j/slf4j-log4j12]},
-         com.amazonaws/aws-java-sdk-s3     {:mvn/version "1.11.155"}},
+ :paths     ["src" "resources" "classes"]
 
- :paths ["src" "resources" "classes"]
+ :mvn/repos {
+             "confluent" {:url "https://packages.confluent.io/maven/"}
+             "central"   {:url "https://repo1.maven.org/maven2/"}
+             "clojars"   {:url "https://repo.clojars.org/"}
+             "releases"  {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release-local"}
+             }
  }

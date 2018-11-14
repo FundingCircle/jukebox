@@ -1,20 +1,27 @@
 {
- :aliases {
-           :cucumber ["run" "-m" "fundingcircle.end_to_end.cucumber"
-                      "--plugin" "json:cucumber/cucumber.json"
-                      "--plugin" "pretty"
-                      "features"],
+ :aliases   {
+             :cucumber {:main-opts ["-m" "fundingcircle.end-to-end.cucumber"
+                                    "--plugin" "json:cucumber/cucumber.json"
+                                    "--plugin" "pretty"
+                                    "features"]},
 
-           :snippets ["run" "-m" "fundingcircle.end_to_end.cucumber"
-                      "--glue" ""
-                      "features"]
-           }
+             :snippets {:main-opts ["-m" "fundingcircle.end_to_end.cucumber"
+                                    "--glue" ""
+                                    "features"]}
+             }
 
- :deps    {
-           jukebox                   {:local/root "../jukebox"}
-           org.clojure/clojure       {:mvn/version "1.9.0"}
-           org.clojure/tools.logging {:mvn/version "0.4.1"}
-           }
+ :deps      {
+             jukebox                   {:local/root "../jukebox"}
+             org.clojure/clojure       {:mvn/version "1.9.0"}
+             org.clojure/tools.logging {:mvn/version "0.4.1"}
+             }
 
- :paths   ["src" "src/fundingcircle/end_to_end" "resources" "classes"]
+ :paths     ["src" "src/fundingcircle/end_to_end" "resources" "classes"]
+
+ :mvn/repos {
+             "confluent" {:url "https://packages.confluent.io/maven/"}
+             "central"   {:url "https://repo1.maven.org/maven2/"}
+             "clojars"   {:url "https://repo.clojars.org/"}
+             "releases"  {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release-local"}
+             }
  }
