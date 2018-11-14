@@ -1,4 +1,4 @@
-(defproject fundingcircle/juke "0.1.5"
+(defproject fundingcircle/juke "0.1.6"
   :description "A simple library that hooks clojure into BDD frameworks such
 as cucumber."
   :url "https://github.com/fundingcircle/jukebox/tree/master/juke"
