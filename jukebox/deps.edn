@@ -1,7 +1,7 @@
 {
  :deps      {
-             juke                              {:local/root "../juke"},
-             juke-cucumber                     {:local/root "../juke-cucumber"},
+             fundingcircle/juke                {:mvn/version "0.1.6"},
+             fundingcircle/juke-cucumber       {:mvn/version "0.1.6"},
              org.clojure/clojure               {:mvn/version "1.9.0"},
              com.amazonaws/aws-java-sdk-athena {:mvn/version "1.11.155"},
              clojure.java-time                 {:mvn/version "0.3.2"},
