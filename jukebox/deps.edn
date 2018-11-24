@@ -1,7 +1,12 @@
 {
  :deps      {
-             fundingcircle/juke                {:mvn/version "0.1.6"},
-             fundingcircle/juke-cucumber       {:mvn/version "0.1.6"},
+             fundingcircle/juke                {:mvn/version "0.1.8"},
+             fundingcircle/juke-cucumber       {:mvn/version "0.1.8"},
+
+             expound                           {:mvn/version "0.7.1"},
+             io.aviso/pretty                   {:mvn/version "0.1.35"},
+             orchestra                         {:mvn/version "2018.11.07-1"},
+
              org.clojure/clojure               {:mvn/version "1.9.0"},
              com.amazonaws/aws-java-sdk-athena {:mvn/version "1.11.155"},
              clojure.java-time                 {:mvn/version "0.3.2"},
@@ -43,9 +48,9 @@
  :paths     ["src" "resources" "classes"]
 
  :mvn/repos {
+             "releases"  {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release-local"}
              "confluent" {:url "https://packages.confluent.io/maven/"}
              "central"   {:url "https://repo1.maven.org/maven2/"}
              "clojars"   {:url "https://repo.clojars.org/"}
-             "releases"  {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release-local"}
              }
  }

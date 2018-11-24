@@ -1,4 +1,4 @@
-(defproject fundingcircle/juke-cucumber "0.1.7-SNAPSHOT"
+(defproject fundingcircle/juke-cucumber "0.1.8"
   :description "Cucumber backend for juke."
   :url "https://github.com/fundingcircle/jukebox/tree/master/juke-cucumber"
   :license {:name "Eclipse Public License"
@@ -8,7 +8,7 @@
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
                                          "test/features"]}}}
-  :dependencies [[fundingcircle/juke "0.1.7-SNAPSHOT"]
+  :dependencies [[fundingcircle/juke "0.1.8"]
                  [io.cucumber/cucumber-core "3.0.2"]
                  [io.cucumber/cucumber-junit "3.0.2"]
                  [org.clojure/clojure "1.9.0"]
