@@ -21,7 +21,7 @@
   (assoc board :table data-table))
 
 (defn the-datafied-table-should-be-foo-col-bar
-  {:scene/step "the datafied table should be (.*)"}
+  {:scene/step "the datafied table should be"}
   [board datafied-table]
   (assert (= (:table board)
              (read-string datafied-table)))

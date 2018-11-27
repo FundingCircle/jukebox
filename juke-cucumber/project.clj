@@ -7,6 +7,7 @@
   :profiles {:dev {:aliases {"cucumber" ["run" "-m" "cucumber.api.cli.Main"
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
+                                         "--plugin" "pretty"
                                          "test/features"]}}}
   :dependencies [[fundingcircle/juke "0.1.10"]
                  [io.cucumber/cucumber-core "4.2.0"]
