@@ -9,12 +9,14 @@
             [clojure.tools.logging :as log]
             [fundingcircle.juke :as juke :refer [JukeBackend]]
             [clojure.string :as string])
-  (:import [cucumber.runtime StepDefinition TagPredicate]
-           [cucumber.runtime.snippets Concatenator FunctionNameGenerator Snippet SnippetGenerator]
+  (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
            [io.cucumber.stepexpression ExpressionArgumentMatcher StepExpressionFactory TypeRegistry]
            java.util.Locale
-           (io.cucumber.datatable DataTable)))
+           (io.cucumber.datatable DataTable)
+           (cucumber.runtime.filter TagPredicate)
+           (java.lang.reflect Type)
+           (cucumber.runtime StepDefinition)))
 
 (def world
   "Used to track and provide state between steps."
@@ -82,19 +84,19 @@
 
 
 (deftype JukeStepDefinition [pattern step-fn step-meta]
-  cucumber.runtime.StepDefinition
+  StepDefinition
   (matchedArguments [_ step]
     (.argumentsFrom
       (ExpressionArgumentMatcher.
         (.createExpression (StepExpressionFactory. (TypeRegistry. (Locale/getDefault)))
-                           pattern)) step))
+                           pattern)) step (make-array Type 0)))
 
   (getLocation [_ detail]
     (location step-fn))
 
   (getParameterCount [_] nil)
 
-  (execute [_ locale args]
+  (execute [_ args]
     ;; call before-steps
     (doseq [{:keys [hook-fn]} (:before-step @definitions)]
       (swap! world (update-world (fn [world] (hook-fn world)))))

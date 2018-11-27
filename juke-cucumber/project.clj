@@ -9,8 +9,8 @@
                                          "--plugin" "json:cucumber.json"
                                          "test/features"]}}}
   :dependencies [[fundingcircle/juke "0.1.9"]
-                 [io.cucumber/cucumber-core "3.0.2"]
-                 [io.cucumber/cucumber-junit "3.0.2"]
+                 [io.cucumber/cucumber-core "4.2.0"]
+                 [io.cucumber/cucumber-junit "4.2.0"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]]
   :pedantic? :warn
