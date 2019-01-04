@@ -1,5 +1,5 @@
-(ns fundingcircle.juke.backend.cucumber
-  "Cucumber backend for juke."
+(ns fundingcircle.jukebox.backend.cucumber
+  "Cucumber backend for jukebox."
   (:gen-class
     :name cucumber.runtime.JukeCucumberRuntimeBackend
     :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
@@ -7,7 +7,7 @@
     :implements [cucumber.runtime.Backend])
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [fundingcircle.juke :as juke :refer [JukeBackend]]
+            [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
             [clojure.string :as string])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
@@ -200,8 +200,8 @@
   (register-after-step-hook [_ hook-fn]
     (swap! definitions add-after-step-hook hook-fn)))
 
-(def juke-backend
-  "A juke cucumber backend."
+(def jukebox-backend
+  "A jukebox cucumber backend."
   (->CucumberJukeBackend))
 
 (defn- set-glue
@@ -260,9 +260,9 @@
 (defn- -loadGlue [this glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
   (if (= 0 (count glue-paths))
-    (juke/register juke-backend (juke/hooks))
+    (jukebox/register jukebox-backend (jukebox/hooks))
     (doseq [glue-path glue-paths]
-      (juke/register juke-backend (juke/hooks glue-path))))
+      (jukebox/register jukebox-backend (jukebox/hooks glue-path))))
   (swap! definitions set-glue glue))
 
 (defn- -buildWorld [_]

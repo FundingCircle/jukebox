@@ -1,96 +1,99 @@
-<<<<<<< HEAD
-# Blackbox tests
+# jukebox - A Clojure BDD Testing Library
 
-This is a refinement and globalization of [us-blackbox](https://github.com/fundingcircle/us-blackbox).
-=======
-# Jukebox
+This is a simple library that hooks clojure into BDD frameworks such
+as cucumber.
 
-## About
-
-Jukebox is a Cucumber-Clojure test framework used for testing Funding Circle
-authored software. It is a refinement and globalization of
-[us-jukebox](https://github.com/fundingcircle/us-jukebox). The vision and
-features for the project are:
->>>>>>> 7953535... Logging improvements
-
-## Vision & Features
-* Teams can author tests on timelines that match their product's
-* Provide confidence in deploys
-* Support continuous deployment
-* Greate developer experience for new tests and troubleshooting
-* Rich test reporting
-* Resumability of test runs
-* Rich diagnostics
-* Support red/yellow/green test status
-* Support eUATs
-
-<<<<<<< HEAD
-## Running the tests
-You'll need to link your cvseeds:
+Here's an example feature.
 ```
-ln -s ~/code/cvseeds .cvseeds
+Feature: Belly
+
+  Scenario: a few cukes
+    Given I have 42 cukes in my belly
+    When I wait 2 hours
+    Then my belly should growl
 ```
 
-To run the tests locally against an environment:
-```
-scripts/tunnel -e staging lein scenari
-```
+Clojure functions can be mapped to each step by tagging it with `:scene/step`:
+```clojure
+(defn i-have-cukes-in-my-belly
+  "Returns an updated `board`."
+  {:scene/step "I have {int} cukes in my belly"}
+  [board cukes]
+  ;; Write code here that turns the phrase above into concrete actions
+  (throw (cucumber.api.PendingException.)))
 
-(You'll need to update your /etc/hosts with the entries printed by `tunnel`.)
+(defn i-wait-hours
+  "Returns an updated `board`."
+  {:scene/step "I wait {int} hours"}
+  [board hours]
+  ;; Write code here that turns the phrase above into concrete actions
+  (throw (cucumber.api.PendingException.)))
 
-After a test run, diagnistics are produced for each step:
-```
-჻ tree diagnostics
-diagnostics
-└── steps
-    ├── 0-create-investor-success-postmortem
-    │   ├── chrome-127.0.0.1-30386-2018-07-24-09-11-09.html
-    │   ├── chrome-127.0.0.1-30386-2018-07-24-09-11-09.json
-    │   └── chrome-127.0.0.1-30386-2018-07-24-09-11-09.png
-    ├── 0-create-investor-success.clj
-    ├── 1-post-wire-deposit-failure-postmortem
-    ├── 1-post-wire-deposit-failure.clj
-    ├── 2-deposit-status-failure-postmortem
-    │   ├── chrome-127.0.0.1-47723-2018-07-24-09-11-31.html
-    │   ├── chrome-127.0.0.1-47723-2018-07-24-09-11-31.json
-    │   └── chrome-127.0.0.1-47723-2018-07-24-09-11-31.png
-    └── 2-deposit-status-failure.clj
+(defn my-belly-should-growl
+  "Returns an updated `board`."
+  {:scene/step "my belly should growl"}
+  [board]
+  ;; Write code here that turns the phrase above into concrete actions
+  (throw (cucumber.api.PendingException.)))
 ```
 
-This includes screenshots, javascript logs, HTML, and clojure code containing fixtures and code to execute each step. To work with the test run fixtures and steps, copy the test output into <troubleshooting/troubleshooting.clj>
+Functions with multiple arities can also be tagged. (Clojure allows metadata to be placed after the function body. This example uses that style.)
+```clojure
+(defn i-wait-hours
+  "Returns an updated `board`."
+  ([board]
+   ;; Write code here that turns the phrase above into concrete actions
+   (throw (cucumber.api.PendingException.)))
+  ([board hours]
+   ;; Write code here that turns the phrase above into concrete actions
+   (throw (cucumber.api.PendingException.)))
+
+  {:scene/steps ["It felt like forever"
+                 "I wait {int} hours"]})
 ```
-cat diagnostics/steps/*.clj | pbcopy
+
+Functions can be registered to run before or after a scenario by
+tagging them with `:scene/before` or `:scene/after` (or both).
+A list of tags can also be provided.
+```clojure
+(defn ^:scene/before setup
+  "Initializes systems under test."
+  {:scene/tags ["tag-a" "tag-b"]}
+  [board scenario])
+
+(defn ^:scene/after teardown
+  "Tears down the test system."
+  [board scenario])
 ```
-=======
-## Documentation
 
-The [reference manual](doc/reference-manual.md) is the primary source for
-information about the project.
+A function can be registered to be run before or after each step by
+tagging it with `:scene/before-step` or `:scene/after-step`:
+```clojure
+(defn ^:scene/before-step before-step
+  "Runs before each scenario step."
+  [board])
 
-## Communication
+(defn ^:scene/after-step after-step
+  "Runs after each scenario step."
+  [board])
+```
 
-Collaboration happens in the Slack channel
-[#a-jukebox-channel](https://fundingcircle.slack.com/messages/CCBT1L7UY).
+## Usage
 
-## Scrum
+Add the library to your project dependencies:
 
-Bugs and tasks are maintained in the Jira project
-[Global Test](https://jira.fundingcircle.com/projects/GT).
-Board name is Global Test.
+```clojure
+:deps {fundingcircle/jukebox {:mvn/version "0.1.10"}}
+```
 
-## Test Results
+Run the cucumber driver, providing it the path to your clojure "glue"
+and feature definitions. A lein alias like this in your project.clj
+will run your tests with `lein cucumber`.
 
-Tests are built and run using [Jenkins](https://jenkins.fc-staging.us/job/jukebox-test/).
+```clojure
+{:aliases {"cucumber" ["run" "-m" "cucumber.api.cli.Main"
+                       "--glue" "test/example"
+                       "--plugin" "json:cucumber.json"
+                       "test/features"]}}
+```
 
-## Releases
-
-Information about builds is in [changelog](doc/changelog.md).
-
-## Requirements
-
-Project requirements reside in [doc/requirements](doc/requirements).
-
-## Contributions
-
-Your participation and [contributions](doc/contributions.md) are encouraged and greatly appreciated!
->>>>>>> 7953535... Logging improvements
