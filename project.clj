@@ -1,4 +1,4 @@
-(defproject fundingcircle/jukebox "0.1.11-SNAPSHOT"
+(defproject fundingcircle/jukebox "1.0.0"
   :description "A clojure BDD library that integrates with cucumber."
   :url "https://github.com/fundingcircle/jukebox/"
   :license {:name "BSD 3-clause"
