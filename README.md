@@ -97,3 +97,8 @@ will run your tests with `lein cucumber`.
                        "test/features"]}}
 ```
 
+## License
+
+Copyright © 2019 Funding Circle
+
+Distributed under the BSD 3-Clause License.
