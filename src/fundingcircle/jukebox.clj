@@ -1,5 +1,5 @@
- (ns fundingcircle.juke
-   "Integrates instrumented clojure functions with juke backends.
+ (ns fundingcircle.jukebox
+   "Integrates instrumented clojure functions with jukebox backends.
 
    Here's an example feature:
    ```
