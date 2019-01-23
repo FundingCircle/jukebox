@@ -1,25 +1,28 @@
 (ns fundingcircle.juke.backend.cucumber
   "Cucumber backend for juke."
   (:gen-class
-   :name cucumber.runtime.JukeCucumberRuntimeBackend
-   :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
-   :init init
-   :implements [cucumber.runtime.Backend])
+    :name cucumber.runtime.JukeCucumberRuntimeBackend
+    :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
+    :init init
+    :implements [cucumber.runtime.Backend])
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
-            [fundingcircle.juke :as juke :refer [JukeBackend]])
+            [fundingcircle.juke :as juke :refer [JukeBackend]]
+            [clojure.string :as string])
   (:import [cucumber.runtime StepDefinition TagPredicate]
            [cucumber.runtime.snippets Concatenator FunctionNameGenerator Snippet SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
            [io.cucumber.stepexpression ExpressionArgumentMatcher StepExpressionFactory TypeRegistry]
-           java.util.Locale))
+           java.util.Locale
+           (io.cucumber.datatable DataTable)))
 
 (def world
   "Used to track and provide state between steps."
   (atom nil))
 
 (defonce definitions
-  (atom {:glue nil :steps [] :before [] :after [] :before-step [] :after-step []}))
+         (atom {:glue nil :steps [] :before [] :after [] :before-step [] :after-step []}))
+
 
 (defn update-world
   "Checks whether the `world` object appears to have been dropped, and
@@ -38,13 +41,53 @@
   (let [{:keys [file line]} (meta v)]
     (str file ":" line)))
 
+
+(defn read-cuke-str
+  "Using the clojure reader is often a good way to interpret literal values
+   in feature files. This function makes some cucumber-specific adjustments
+   to basic reader behavior. This is particularly appropriate when reading a
+   table, for example: reading | \"1\" | 1 | we should interpret 1 as an int
+   and \"1\" as a string."
+  [string]
+  (cond
+    (re-matches #"^\d+" string) (Long. string)
+    (re-matches #"^:.*|\d+(\.\d+)" string) (BigDecimal. string)
+    (re-matches #"^\s*nil\s*$" string) nil
+    :else (string/replace string #"\"" "")))
+
+(defn table->rows
+  "Reads a cucumber table of the form
+     | key-1 | key-2 | ... | key-n |
+     | val-1 | val-2 | ... | val-n |
+   For example, given:
+     | id | name    | created-at    |
+     | 55 | \"foo\" | 1293884100000 |
+     | 56 | \"bar\" | 1293884100000 |
+   It evaluates to the clojure literal:
+     [{:id 55, :name \"foo\", :created-at 1293884100000}
+      {:id 56, :name \"bar\", :created-at 1293884100000}]"
+  [data]
+  (let [data        (map seq (.asLists data))
+        header-keys (map keyword (first data))
+        row->hash   (fn [row] (apply hash-map
+                                     (interleave header-keys
+                                                 (map read-cuke-str row))))]
+    (map row->hash (next data))))
+
+(defmulti process-arg class)
+
+(defmethod process-arg DataTable [arg] (table->rows arg))
+
+(defmethod process-arg :default [arg] arg)
+
+
 (deftype JukeStepDefinition [pattern step-fn step-meta]
   cucumber.runtime.StepDefinition
   (matchedArguments [_ step]
     (.argumentsFrom
-     (ExpressionArgumentMatcher.
-      (.createExpression (StepExpressionFactory. (TypeRegistry. (Locale/getDefault)))
-                         pattern)) step))
+      (ExpressionArgumentMatcher.
+        (.createExpression (StepExpressionFactory. (TypeRegistry. (Locale/getDefault)))
+                           pattern)) step))
 
   (getLocation [_ detail]
     (location step-fn))
@@ -60,7 +103,7 @@
     (try
       (swap! world (update-world (fn [world] (apply step-fn
                                                     (assoc world :scene/step step-meta)
-                                                    args))))
+                                                    (map process-arg args)))))
       (catch Throwable e
         (swap! world assoc :scene/exception e)))
 
@@ -86,13 +129,13 @@
 
   (execute [hd scenario]
     (swap! world (update-world
-                  (fn [world]
-                    (hook-fn world {:status (.getStatus scenario)
-                                    :failed? (.isFailed scenario)
-                                    :name (.getName scenario)
-                                    :id (.getId scenario)
-                                    :uri (.getUri scenario)
-                                    :lines (.getLines scenario)})))))
+                   (fn [world]
+                     (hook-fn world {:status (.getStatus scenario)
+                                     :failed? (.isFailed scenario)
+                                     :name (.getName scenario)
+                                     :id (.getId scenario)
+                                     :uri (.getUri scenario)
+                                     :lines (.getLines scenario)})))))
   (matches [hd tags]
     (.apply tag-predicate tags))
 
@@ -176,7 +219,7 @@
   cucumber.runtime.snippets.Concatenator
   (concatenate [_ words]
     (str/lower-case
-     (str/join "-" words))))
+      (str/join "-" words))))
 
 (deftype JukeCucumberSnippet [step]
   cucumber.runtime.snippets.Snippet
@@ -196,12 +239,12 @@
   ;; */
   (template [_]
     (str
-     "(defn {2}\n"
-     "  \"Returns an updated context (`board`).\"\n"
-     "  '{':scene/step \"{1}\"'}'\n"
-     "  [{3}]\n"
-     "  ;; {4}\n"
-     "  (throw (cucumber.api.PendingException.)))\n"))
+      "(defn {2}\n"
+      "  \"Returns an updated context (`board`).\"\n"
+      "  '{':scene/step \"{1}\"'}'\n"
+      "  [{3}]\n"
+      "  ;; {4}\n"
+      "  (throw (cucumber.api.PendingException.)))\n"))
   (tableHint [_] nil)
   (arguments [_ args]
     (str/join " " (cons "board" (keys args))))
