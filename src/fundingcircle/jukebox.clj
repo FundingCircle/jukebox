@@ -81,7 +81,7 @@
              [clojure.tools.logging :as log]
              [clojure.tools.namespace.find :as find]))
 
-(defn- scene-related?
+(defn scene-related?
   "Checks whether a var is tagged with any scene related metadata."
   [v]
   (->> (meta v)

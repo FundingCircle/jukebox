@@ -7,7 +7,8 @@
                  [io.cucumber/cucumber-junit "4.2.0"]
                  [org.clojure/clojure "1.10.0" :scope "provided"]
                  [org.clojure/tools.logging "0.4.1"]
-                 [org.clojure/tools.namespace "0.2.11"]]
+                 [org.clojure/tools.namespace "0.2.11"]
+                 [venantius/yagni "0.1.7"]]
   :profiles {:dev {:aliases {"cucumber" ["run" "-m" "cucumber.api.cli.Main"
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
