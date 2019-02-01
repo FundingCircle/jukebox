@@ -14,12 +14,4 @@
                                          "--plugin" "pretty"
                                          "test/features"]}}}
   :pedantic? :warn
-  :aot [fundingcircle.jukebox.backend.cucumber]
-  :repositories [["snapshots"
-                  {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
-                   :username [:gpg :env/artifactory_user]
-                   :password [:gpg :env/artifactory_password]}]
-                 ["releases"
-                  {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
-                   :username [:gpg :env/artifactory_user]
-                   :password [:gpg :env/artifactory_password]}]])
+  :aot [fundingcircle.jukebox.backend.cucumber])
