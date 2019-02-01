@@ -1,4 +1,6 @@
-# jukebox - A Clojure BDD Testing Library
+# Jukebox - A Clojure BDD Testing Library
+
+[![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jukebox.svg)](https://clojars.org/fundingcircle/jukebox)
 
 This is a simple library that hooks clojure into BDD frameworks such
 as cucumber.
