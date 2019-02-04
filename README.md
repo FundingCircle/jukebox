@@ -80,21 +80,30 @@ tagging it with `:scene/before-step` or `:scene/after-step`:
 
 ## Usage
 
-Add the library to your project dependencies:
+[Tap](https://github.com/matthias-margush/aka) the jukebox aliases:
 
-```clojure
-:deps {fundingcircle/jukebox {:mvn/version "0.1.10"}}
-```
+``` shell
+჻ aka tap -o deps.edn https://github.com/FundingCircle/jukebox/blob/master/aliases.edn
+Tapped :jukebox/cucumber
+Tapped :jukebox/snippets
 
-Run the cucumber driver, providing it the path to your clojure "glue"
-and feature definitions. A lein alias like this in your project.clj
-will run your tests with `lein cucumber`.
+჻ aka describe :jukebox/
+:jukebox/cucumber - Execute scenarios with the cucumber runner.
+:jukebox/snippets - Generate code snippets for scenarios.
 
-```clojure
-{:aliases {"cucumber" ["run" "-m" "cucumber.api.cli.Main"
-                       "--glue" "test/example"
-                       "--plugin" "json:cucumber.json"
-                       "test/features"]}}
+჻ aka describe :jukebox/cucumber
+Execute scenarios with the cucumber runner.
+
+Usage: clj -A:jukebox/cucumber [options] <features dir>
+
+Options:
+  -h, --help        Additional cucumber help.
+  -t, --tags <tags> Only run scenarios with matching tags.
+
+჻ aka describe :jukebox/snippets
+Generate code snippets for scenarios.
+
+Usage: clj -A:jukebox/snippets <features dir>
 ```
 
 ## License
