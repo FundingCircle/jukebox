@@ -1,0 +1,12 @@
+{:cucumber {:description "Execute scenarios with the cucumber runner."
+            :usage ["Usage: clj -A:jukebox/cucumber [options] <features dir>"
+                    ""
+                    "Options:"
+                    "  -h, --help        Additional cucumber help."
+                    "  -t, --tags <tags> Only run scenarios with matching tags."]
+            :main-opts ["-m" "fundingcircle.jukebox.alias.cucumber"]
+            :extra-deps {fundingcircle/jukebox {:mvn/version "1.0.1"}}}
+ :snippets {:description "Generate code snippets for scenarios."
+            :usage ["Usage: clj -A:jukebox/snippets <features dir>"]
+            :main-opts ["-m" "fundingcircle.jukebox.alias.snippets" "--glue" "regenerate-snippets"]
+            :extra-deps {fundingcircle/jukebox {:mvn/version "1.0.1"}}}}
