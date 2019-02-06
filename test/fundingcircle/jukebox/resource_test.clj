@@ -66,5 +66,7 @@
             :scene/resource-caps {:topic-name "topic-name-a"}}
            {:scene/resource-type :kafka-topic
             :scene/resource-caps {:topic-name "topic-name-b"}}}
-       (`entry-point
-        (resource/inventory ["test"])))))
+         (->> (resource/inventory [:scene/resource-type])
+              (`entry-point)
+              (map #(select-keys % [:scene/resource-type :scene/resource-caps]))
+              (into #{})))))
