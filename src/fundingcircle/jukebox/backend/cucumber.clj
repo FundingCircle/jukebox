@@ -259,11 +259,11 @@
 
 (defn- -loadGlue [this glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
+  (swap! definitions set-glue glue)
   (if (= 0 (count glue-paths))
     (jukebox/register jukebox-backend (jukebox/hooks))
     (doseq [glue-path glue-paths]
-      (jukebox/register jukebox-backend (jukebox/hooks glue-path))))
-  (swap! definitions set-glue glue))
+      (jukebox/register jukebox-backend (jukebox/hooks glue-path)))))
 
 (defn- -buildWorld [_]
   (reset! world {::world? true}))
