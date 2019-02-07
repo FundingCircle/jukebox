@@ -12,5 +12,6 @@
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
                                          "--plugin" "pretty"
-                                         "test/features"]}}}
+                                         "test/features"]}
+                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]]}}
   :aot [fundingcircle.jukebox.backend.cucumber])
