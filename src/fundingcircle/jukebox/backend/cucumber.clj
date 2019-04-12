@@ -1,10 +1,10 @@
 (ns fundingcircle.jukebox.backend.cucumber
   "Cucumber backend for jukebox."
   (:gen-class
-    :name cucumber.runtime.JukeCucumberRuntimeBackend
-    :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
-    :init init
-    :implements [cucumber.runtime.Backend])
+   :name cucumber.runtime.JukeCucumberRuntimeBackend
+   :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
+   :init init
+   :implements [cucumber.runtime.Backend])
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
@@ -22,9 +22,13 @@
   "Used to track and provide state between steps."
   (atom nil))
 
-(defonce definitions
-         (atom {:glue nil :steps [] :before [] :after [] :before-step [] :after-step []}))
+(defn ->definitions
+  "Return an atom that will be used to track step definitions as they are loaded."
+  []
+  (atom {:glue nil :steps [] :before [] :after [] :before-step [] :after-step []}))
 
+(defonce definitions
+  (->definitions))
 
 (defn update-world
   "Checks whether the `world` object appears to have been dropped, and
@@ -36,13 +40,11 @@
         (log/errorf "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)"))
       new-world)))
 
-
 (defn- location
   "Returns a string repr of the file and line number of the var."
   [v]
   (let [{:keys [file line]} (meta v)]
     (str file ":" line)))
-
 
 (defn read-cuke-str
   "Using the clojure reader is often a good way to interpret literal values
@@ -82,14 +84,13 @@
 
 (defmethod process-arg :default [arg] arg)
 
-
-(deftype JukeStepDefinition [pattern step-fn step-meta]
+(defrecord JukeStepDefinition [pattern step-fn step-meta]
   StepDefinition
   (matchedArguments [_ step]
     (.argumentsFrom
-      (ExpressionArgumentMatcher.
-        (.createExpression (StepExpressionFactory. (TypeRegistry. (Locale/getDefault)))
-                           pattern)) step (make-array Type 0)))
+     (ExpressionArgumentMatcher.
+      (.createExpression (StepExpressionFactory. (TypeRegistry. (Locale/getDefault)))
+                         pattern)) step (make-array Type 0)))
 
   (getLocation [_ detail]
     (location step-fn))
@@ -122,6 +123,7 @@
            (= (.getFileName stack-trace-element) file))))
 
   (getPattern [_] (str pattern))
+
   (isScenarioScoped [_] false))
 
 (deftype JukeHookDefinition [tag-predicate hook-fn]
@@ -183,7 +185,7 @@
   [definitions hook-fn]
   (update definitions :after-step conj {:hook-fn hook-fn}))
 
-(deftype CucumberJukeBackend []
+(deftype CucumberJukeBackend [definitions]
   JukeBackend
   (register-step [_ pattern step-fn]
     (swap! definitions add-step pattern step-fn))
@@ -202,7 +204,7 @@
 
 (def jukebox-backend
   "A jukebox cucumber backend."
-  (->CucumberJukeBackend))
+  (->CucumberJukeBackend definitions))
 
 (defn- set-glue
   "Sets the cucumber glue instance. Registers any steps, before hooks
@@ -253,11 +255,11 @@
   (escapePattern [_ pattern]
     (str/replace (str pattern) "\"" "\\\"")))
 
-(defn- -init
-  [resource-loader type-registry]
+(defn -init
+  [_resource-loader _type-registry]
   [[] nil])
 
-(defn- -loadGlue [this glue glue-paths]
+(defn -loadGlue [_ glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
   (swap! definitions set-glue glue)
   (if (= 0 (count glue-paths))
@@ -265,13 +267,13 @@
     (doseq [glue-path glue-paths]
       (jukebox/register jukebox-backend (jukebox/hooks glue-path)))))
 
-(defn- -buildWorld [_]
+(defn -buildWorld [_]
   (reset! world {::world? true}))
 
-(defn- -disposeWorld [_]
+(defn -disposeWorld [_]
   (reset! world {::world? true}))
 
-(defn- -getSnippet
+(defn -getSnippet
   [_ step keyword _]
   (.getSnippet (SnippetGenerator. (->JukeCucumberSnippet step)
                                   (ParameterTypeRegistry. (Locale/getDefault)))

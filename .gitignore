@@ -1,4 +1,4 @@
-.lein-failures
+.lein*
 .nrepl-port
 cucumber.json
 pom.xml*
