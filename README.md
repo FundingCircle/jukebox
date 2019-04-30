@@ -85,7 +85,7 @@ tagging it with `:scene/before-step` or `:scene/after-step`:
 [Tap](https://github.com/matthias-margush/aka) the jukebox aliases:
 
 ``` shell
-჻ aka tap -o deps.edn https://github.com/FundingCircle/jukebox/blob/master/aliases.edn
+჻ aka tap -o deps.edn :jukebox https://raw.githubusercontent.com/FundingCircle/jukebox/master/aliases.edn
 Tapped :jukebox/cucumber
 Tapped :jukebox/snippets
 
