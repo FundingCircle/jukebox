@@ -32,10 +32,23 @@
   [board scenario]
   board)
 
+(defn test-flavor-generator
+  "What flavor of cake?"
+  [board _number-of-cukes]
+  (assoc board :flavor "Chocolate"))
+
+(defn test-layers-generator
+  "Generate a test order."
+  [{:keys [flavor]  :as board} number-of-cukes]
+  (assoc board :layers number-of-cukes))
+
 (defn i-have-cukes-in-my-belly
-  {:scene/step "I have {int} cukes in my belly"
-   :scene/resources [:kafka/topic "topic-name"]}
+  {:scene/step      "I have {int} cukes in my belly"
+   :scene/resources [:kafka/topic "topic-name"]
+   :accord          {:receives test-flavor-generator
+                     :provides test-layers-generator}}
   [board number-of-cukes]
+  (throw (ex-info "This is mocked out with :accord meta." {}))
   (helper-fn-a)
   (helper-fn-b)
   (helper-fn-d)

@@ -84,6 +84,12 @@
 
 (defmethod process-arg :default [arg] arg)
 
+(defn- mock-step
+  ""
+  [{:keys [receives provides]} board & more]
+  (let [board (apply receives board more)]
+    (apply provides board more)))
+
 (defrecord JukeStepDefinition [pattern step-fn step-meta]
   StepDefinition
   (matchedArguments [_ step]
@@ -104,9 +110,25 @@
 
     ;; call step
     (try
-      (swap! world (update-world (fn [world] (apply step-fn
-                                                    (assoc world :scene/step step-meta)
-                                                    (map process-arg args)))))
+      (when (= step-fn #'example.belly/i-have-cukes-in-my-belly)
+        (printf "Calling step fn: %s\n" {:step-fn step-fn :meta (keys step-meta)}))
+
+      ;; TODO: throw error or log message if both aren't provided on meta
+      (if-let [accord (:accord step-meta)]
+        (swap! world (update-world (fn [world] (apply mock-step
+                                                      accord
+                                                      (assoc world :scene/step step-meta)
+                                                      (map process-arg args)))))
+        (do
+          (println "Calling real fn")
+          (swap! world (update-world (fn [world] (apply step-fn
+                                                        (assoc world :scene/step step-meta)
+                                                        (map process-arg args)))))))
+
+      (when (= step-fn #'example.belly/i-have-cukes-in-my-belly)
+        (clojure.pprint/pprint {:world @world}) )
+
+
       (catch Throwable e
         (swap! world assoc :scene/exception e)))
 
