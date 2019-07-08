@@ -8,6 +8,7 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
+            [fundingcircle.jukebox.accord :as accord]
             [clojure.string :as string]
             [clojure.set :as set])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
@@ -107,35 +108,43 @@
     (try
       ;; 1. Run receives first. the receives fn should inject fixtures into sut
       ;; (if the fixtures aren't already present & can't be injected, then throw)
-      (when-let [receives-fn (:scene/receives step-meta)]
-        (swap! world (update-world (fn [world] (apply receives-fn
-                                                      (assoc world :scene/step step-meta)
-                                                      (map process-arg args))))))
+      (when-let [expected-fixtures (:accord/receives step-meta)]
+        ;; call multimethod on each expected input to provision it
+        (doseq [fixture-key expected-fixtures]
+          (when-not (get @world fixture-key)
+            (log/debugf "Step requires missing fixture: %s / %s" fixture-key @world)
+            (let [new-world (accord/provide @world fixture-key (map process-arg args))]
+              (log/debugf "Generated fixture: %s" (get new-world fixture-key))
+              (if (= ::accord/not-implemented (get new-world fixture-key))
+                (log/errorf "Step requires fixture to be provided, but it wasn't: %s" fixture-key)
+                (do
+                  (log/debugf "Checking if board was dropped: %s" (::world? @world))
+                  (reset! world new-world)
+                  (log/debugf "Updated world: %s" @world)))))))
 
       ;; Run the real step fn
+      (log/debugf "Running actual step: %s" (:scene/step step-meta))
       (swap! world (update-world (fn [world] (apply step-fn
                                                     (assoc world :scene/step step-meta)
                                                     (map process-arg args)))))
 
       ;; completed -> Compare with the output of provides
-      (when-let [provides-fn (:scene/provides step-meta)]
-        (let [expected (apply provides-fn
-                              (assoc @world :scene/step step-meta)
-                              (map process-arg args))
-              expected-fixtures (set (keys expected))
-              missing (set/difference expected-fixtures (set (keys @world)))]
-          (when missing
+      (when-let [expected-fixtures (set (:accord/provides step-meta))]
+        (let [missing (set/difference expected-fixtures (set (keys @world)))]
+          (when-not (empty? missing)
             (log/errorf "Expected step to provide fixures, but they are missing: %s" missing))))
 
       (catch Throwable e
+        (.printStackTrace e)
         (swap! world assoc :scene/exception e)))
 
     ;; call after-steps
     (doseq [{:keys [hook-fn]} (:after-step @definitions)]
       (swap! world (update-world (fn [world] (hook-fn world)))))
 
-    (when-not (:scene/provides step-meta)
-      (when-let [e (:scene/exception @world)]
+    (when-let [e (:scene/exception @world)]
+      (if (:accord/provides step-meta)
+        (log/errorf "Step threw an exception: %s" e)
         (throw e))))
 
   (isDefinedAt [_ stack-trace-element]
@@ -171,7 +180,7 @@
 (defn- add-step
   "Adds a step to glue. If glue is nil, queues it up to be added later."
   [{:keys [glue] :as definitions} pattern step-fn]
-  (log/debugf "Adding step: %s" [glue pattern])
+  ;; (log/debugf "Adding step: %s" [glue pattern])
   (if glue
     (do
       (.addStepDefinition glue (->JukeStepDefinition pattern step-fn (meta step-fn)))
