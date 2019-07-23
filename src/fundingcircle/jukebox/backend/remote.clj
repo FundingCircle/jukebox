@@ -7,22 +7,18 @@
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
-(def non-websocket-error
-  {:status 400
-   :headers { "content-type" "application/text" }
-   :body "Expected a websocket request."})
+(defonce jlc-step-registry (atom nil))
 
-(defmulti coord
-  "Handle coordination messages on the server side."
-  (fn [message] (get message "action")))
+(defn register-client-steps
+  "Register steps that a jukebox language client knows how to handle."
+  [{:strs [clientid steps]}]
+  (println "Registring client steps")
+  (swap! jlc-step-registry
+         merge
+         (-> (map (fn [step] [step clientid]) steps)
+             (into {}))))
 
-(defmethod coord :default
-  [message]
-  (println "Got message w/unknown action: %s" message)
-  message)
-
-(defonce sock (atom nil))
-
+(defonce ws (atom nil))
 (defn step-request
   [req]
   (if-let [socket (try
@@ -31,11 +27,15 @@
                       (.printStackTrace e)
                       nil))]
     (do
-      (println "Resetting sock:" socket)
-      (reset! sock socket)
+      (reset! ws socket)
+      (loop [message @(s/take! @ws)]
+        (case (get message "action")
+          "register" (register-client-steps message))
+        (recur @(s/take! @ws))))
 
-      (s/connect socket socket))
-    non-websocket-error))
+    {:status 400
+     :headers { "content-type" "application/text" }
+     :body "Expected a websocket request."}))
 
 (defroutes step-coordinator
   (GET "/jukebox" [] step-request)
@@ -60,12 +60,8 @@
     (alter-var-root #'server (constantly nil))))
 
 (comment
-  server
-  @sock
-
-  (s/put! @sock "10")
-  @(s/take! @sock)
-
   (start)
+  [server ws]
+
   (stop)
   )
