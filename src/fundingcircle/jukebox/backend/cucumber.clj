@@ -8,6 +8,8 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
+            [fundingcircle.jukebox.step-coordinator :as step-coordinator]
+            [fundingcircle.jukebox.step-client.clojure-lang :as clojure-lang]
             [clojure.string :as string])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
@@ -36,7 +38,7 @@
   [f]
   (fn [world & args]
     (let [new-world (apply f world args)]
-      (when-not (::world? new-world)
+      (when-not (get new-world ::world?)
         (log/errorf "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)"))
       new-world)))
 
@@ -76,7 +78,7 @@
         row->hash   (fn [row] (apply hash-map
                                      (interleave header-keys
                                                  (map read-cuke-str row))))]
-    (map row->hash (next data))))
+    (mapv row->hash (next data))))
 
 (defmulti process-arg class)
 
@@ -104,9 +106,11 @@
 
     ;; call step
     (try
-      (swap! world (update-world (fn [world] (apply step-fn
-                                                    (assoc world :scene/step step-meta)
-                                                    (map process-arg args)))))
+      (swap! world (update-world (fn [world]
+                                   @(step-coordinator/drive-step
+                                     pattern
+                                     (assoc world :scene/step pattern)
+                                     (mapv process-arg args)))))
       (catch Throwable e
         (swap! world assoc :scene/exception e)))
 
@@ -261,11 +265,10 @@
 
 (defn -loadGlue [_ glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
-  (swap! definitions set-glue glue)
-  (if (= 0 (count glue-paths))
-    (jukebox/register jukebox-backend (jukebox/hooks))
-    (doseq [glue-path glue-paths]
-      (jukebox/register jukebox-backend (jukebox/hooks glue-path)))))
+  (let [steps @(step-coordinator/restart glue-paths [#'clojure-lang/client])]
+    (doseq [step steps]
+      (jukebox/register-step jukebox-backend step step-coordinator/drive-step))
+    (swap! definitions set-glue glue)))
 
 (defn -buildWorld [_]
   (reset! world {::world? true}))

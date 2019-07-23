@@ -18,9 +18,8 @@
 
 (require 'example.belly) ;; be sure the instrumented fns are loaded
 
-(deftest inventory-test
+#_(deftest inventory-test
   (testing "resource inventory"
-    
     (let [inventory (resource/inventory [:scene/resources]
                                         (resource/parse-tags ["test/features"]))]
       (is (= {'example.belly/i-have-cukes-in-my-belly

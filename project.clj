@@ -3,7 +3,8 @@
   :url "https://github.com/fundingcircle/jukebox/"
   :license {:name "BSD 3-clause"
             :url "http://opensource.org/licenses/BSD-3-Clause"}
-  :dependencies [[aleph "0.4.6"]
+  :dependencies [[aleph "0.4.7-alpha5"]
+                 [cheshire "5.8.1"]
                  [compojure "1.6.1"]
                  ;; [http-kit "2.3.0"]
                  [io.cucumber/cucumber-core "4.2.2"]
