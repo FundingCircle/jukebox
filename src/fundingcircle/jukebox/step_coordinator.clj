@@ -133,4 +133,6 @@
 
 (comment
   (restart ["test/example"] [#'clojure-lang/client])
+  (restart [] [])
+
   )

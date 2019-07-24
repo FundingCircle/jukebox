@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'faye/websocket'
+require 'eventmachine'
+require 'json'
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = 'Usage: jlc_ruby [options]'
+
+  opts.on('-p PORT', '--port PORT', Integer, 'Connect to step coordinator at PORT') do |port|
+    options[:port] = port
+  end
+
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+end.parse!
+
+raise OptionParser::MissingArgument if options[:port].nil?
+
+puts "Connecting to port #{options[:port]}"
+puts "Loading ruby step definitions"
+Dir["./features/step_definitions/*.rb"].each { |file| require file }
+
+EM.run {
+  ws = Faye::WebSocket::Client.new("ws://localhost:#{options[:port]}/jukebox")
+
+  ws.on :open do |event|
+    p [:open]
+    puts 'Connection established'
+    puts 'Sending step inventory'
+    puts "Step inventory: #{Jukebox.steps.keys}"
+
+    ws.send(JSON[{
+      "action": "register",
+      "clientid": "1234",
+      "version": "1",
+      "steps": Jukebox.steps.keys
+    }])
+
+    #ws.send('Hello, world!')
+    # (logf "Sending step inventory")
+    # (send! {"action" "register"
+    #     "clientid" (:clientid @ws)
+    #     "language" "clojure"
+    #     "version" "1"
+    #     "steps" (into [] (keys (:steps @definitions)))})
+  end
+
+  ws.on :message do |event|
+    p [:message, event.data]
+    puts 'Received message'
+  end
+
+  ws.on :close do |event|
+    p [:close, event.code, event.reason]
+    ws = nil
+    puts 'Closed connection'
+  end
+}
