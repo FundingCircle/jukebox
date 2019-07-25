@@ -5,14 +5,14 @@
             [clojure.tools.logging :as log]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :as route]
-            [fundingcircle.jukebox.step-client.clojure-lang :as clojure-lang]
+            [fundingcircle.jukebox.step-client.jlc-clojure :as jlc-clojure]
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
 (defn logf
   "Log a messagate to stdout."
   [fmt & args]
-  (apply printf (str "JLS: " fmt "\n") args))
+  (.printf (System/out) (str "JLS: " fmt "\n") (into-array Object args)))
 
 (defonce client-count (atom 0))
 (defonce registration-completed (atom nil))
@@ -30,7 +30,7 @@
   [step board args]
   (if-let [clientid (get @jlc-step-registry step)]
     (do
-      (logf "Sending request to execute step: %s: %s" step args)
+      (logf "Sending request to client %s to execute step: %s: %s" clientid step args)
       (send! clientid {"action" "step"
                        "step" step
                        "args" args
@@ -41,8 +41,8 @@
 
 (defn register-client-steps
   "Register steps that a jukebox language client knows how to handle."
-  [{:keys [clientid steps]}]
-  (logf "Registering client steps: %s" steps)
+  [{:keys [clientid language steps]}]
+  (logf "Registering %s client (%s) steps: %s" language clientid steps)
   (swap! jlc-step-registry
          merge
          (->> (map (fn [step] [step clientid]) steps)
@@ -74,7 +74,9 @@
           (swap! ws assoc clientid socket)
           (register-client-steps message)
           (swap! client-count dec)
+          (logf "Remaining # of clients to register steps: %s" @client-count)
           (when (= 0 @client-count)
+            (logf "All clients have registered steps: %s" @jlc-step-registry)
             (d/success! @registration-completed (keys @jlc-step-registry))))
         (logf "Didn't get registration message"))
       (s/consume #'handle-client-message socket)
@@ -132,7 +134,7 @@
   (start glue-paths clients))
 
 (comment
-  (restart ["test/example"] [#'clojure-lang/client])
+  (restart ["test/example"] [#'jlc-client/client])
   (restart [] [])
 
   )

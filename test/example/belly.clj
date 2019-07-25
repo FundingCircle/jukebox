@@ -42,12 +42,12 @@
   (helper-fn-e)
   board)
 
-(defn i-wait-hour
+#_(defn i-wait-hour
   {:scene/step "I wait {int} hour"}
   [board number-of-hours]
   board)
 
-(defn my-belly-should-growl
+#_(defn my-belly-should-growl
   {:scene/step "my belly should growl"}
   [board]
   board)

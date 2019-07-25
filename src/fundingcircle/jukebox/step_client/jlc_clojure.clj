@@ -1,4 +1,4 @@
-(ns fundingcircle.jukebox.step-client.clojure-lang
+(ns fundingcircle.jukebox.step-client.jlc-clojure
   "Clojure-language client for jukebox."
   (:require [aleph.http :as http]
             [cheshire.core :as json]
@@ -11,7 +11,7 @@
 (defn logf
   "Log a messagate to stdout."
   [fmt & args]
-  (apply printf (str "JLC (clojure): " fmt "\n") args))
+  (.printf (System/out) (str "JLC (clojure): " fmt "\n") (into-array Object args)))
 
 (defn ->definitions
   "Return an atom that will be used to track step definitions as they are loaded."

@@ -9,7 +9,8 @@
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
             [fundingcircle.jukebox.step-coordinator :as step-coordinator]
-            [fundingcircle.jukebox.step-client.clojure-lang :as clojure-lang]
+            [fundingcircle.jukebox.step-client.jlc-clojure :as jlc-clojure]
+            [fundingcircle.jukebox.step-client.jlc-ruby :as jlc-ruby]
             [clojure.string :as string])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
@@ -265,7 +266,9 @@
 
 (defn -loadGlue [_ glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
-  (let [steps @(step-coordinator/restart glue-paths [#'clojure-lang/client])]
+  (let [steps @(step-coordinator/restart glue-paths
+                                         [#'jlc-ruby/client
+                                          #'jlc-clojure/client])]
     (doseq [step steps]
       (jukebox/register-step jukebox-backend step step-coordinator/drive-step))
     (swap! definitions set-glue glue)))
