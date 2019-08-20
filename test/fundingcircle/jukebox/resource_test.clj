@@ -1,5 +1,5 @@
 (ns fundingcircle.jukebox.resource-test
-  "Test resource inventory libary."
+  "Test resource inventory library."
   (:require [clojure.test :refer [deftest is testing]]
             [fundingcircle.jukebox.resource :as resource]))
 

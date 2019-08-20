@@ -2,7 +2,8 @@
 
 require_relative '../../lib/jukebox'
 
-module Tests
+# Example tests using jukebox
+module ExampleTests
   extend Jukebox
 
   Step('today is Sunday') do |board|

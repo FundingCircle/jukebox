@@ -9,11 +9,6 @@
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
-(defn logf
-  "Log a messagate to stdout."
-  [fmt & args]
-  (.printf (System/out) (str "JLS: " fmt "\n") (into-array Object args)))
-
 (defonce client-count (atom 0))
 (defonce registration-completed (atom nil))
 (defonce result-received (atom nil))
@@ -30,19 +25,19 @@
   [step board args]
   (if-let [clientid (get @jlc-step-registry step)]
     (do
-      (logf "Sending request to client %s to execute step: %s: %s" clientid step args)
+      (log/debugf "Sending request to client %s to execute step: %s: %s" clientid step args)
       (send! clientid {"action" "step"
                        "step" step
                        "args" args
                        "board" board})
       (reset! result-received (d/deferred))
       @result-received)
-    (logf "No client knows how to handle step: %s" step)))
+    (log/errorf "No client knows how to handle step: %s" step)))
 
 (defn register-client-steps
   "Register steps that a jukebox language client knows how to handle."
   [{:keys [clientid language steps]}]
-  (logf "Registering %s client (%s) steps: %s" language clientid steps)
+  (log/debugf "Registering %s client (%s) steps: %s" language clientid steps)
   (swap! jlc-step-registry
          merge
          (->> (map (fn [step] [step clientid]) steps)
@@ -53,10 +48,10 @@
   ""
   [message]
   (if (= :timeout message)
-    (logf "timed out")
+    (log/errorf "timed out")
     (let [message (json/parse-string message true)]
       (case (:action message)
-        "response" (logf "received step result: %s" message)
+        "response" (log/debugf "received step result: %s" message)
         "result" (d/success! @result-received (:board message))
         (log/errorf "Don't know how to handle message: %s" message)))))
 
@@ -70,20 +65,20 @@
     (do
       (if-let [{:keys [clientid] :as message} (json/parse-string @(s/take! socket) true)]
         (do
-          (logf "Established ws connection with language client: %s" clientid)
+          (log/debugf "Established ws connection with language client: %s" clientid)
           (swap! ws assoc clientid socket)
           (register-client-steps message)
           (swap! client-count dec)
-          (logf "Remaining # of clients to register steps: %s" @client-count)
+          (log/debugf "Remaining # of clients to register steps: %s" @client-count)
           (when (= 0 @client-count)
-            (logf "All clients have registered steps: %s" @jlc-step-registry)
+            (log/debugf "All clients have registered steps: %s" @jlc-step-registry)
             (d/success! @registration-completed (keys @jlc-step-registry))))
-        (logf "Didn't get registration message"))
+        (log/errorf "Didn't get registration message"))
       (s/consume #'handle-client-message socket)
       {:status 202})
 
     (do
-      (logf "Failed to establish client websocket connection")
+      (log/errorf "Failed to establish client websocket connection")
       {:status 400
        :headers { "content-type" "application/text" }
        :body "Expected a websocket request."})))
@@ -102,14 +97,14 @@
     (let [steps-registered (d/deferred)
           s (http/start-server #'step-coordinator {:port 0})
           port (aleph.netty/port s)]
-      (logf "Started on port %s" port)
+      (log/debugf "Started on port %s" port)
       (reset! server s)
       (reset! client-count (count clients))
       (reset! registration-completed steps-registered)
       (doseq [client clients]
-        (logf "Spinning up jukebox language client: %s" client)
+        (log/infof "Spinning up jukebox language client: %s" client)
         (client port glue-paths))
-      (logf "Started")
+      ;(log/debugf "Started")
       steps-registered))
   )
 
@@ -117,13 +112,13 @@
   "Stop step coordinator."
   []
   (when @ws
-    (logf "Stopping jukebox language clients")
+    (log/debugf "Stopping jukebox language clients")
     (doseq [clientid (keys @ws)]
       (send! clientid {"action" "stop"}))
     (reset! ws nil))
 
   (when @server
-    (logf "Stopping")
+    (log/debugf "Stopping")
     (.close @server)
     (reset! server nil)))
 

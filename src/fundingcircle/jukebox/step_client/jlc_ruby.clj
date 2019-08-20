@@ -21,5 +21,5 @@
 (defn client
   "Start the clojure step language client."
   [port glue-paths]
-  (logf "Starting jlc_ruby on port %s" port)
-  (bashc (str "bin/jlc_ruby --port " port) :dir "jlc_ruby"))
+  (logf "... Starting jlc_ruby on port %s" port)
+  (bashc (str "bin/jlc_ruby --port " port)))

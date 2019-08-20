@@ -1,11 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'faye/websocket'
 require 'eventmachine'
+require 'faye/websocket'
+require 'logger'
 require 'json'
+require 'jukebox'
 require 'optparse'
 require 'securerandom'
+
+@logger = Logger.new(STDOUT)
+@logger.level = Logger::ERROR
 
 options = {}
 OptionParser.new do |opts|
@@ -24,23 +29,19 @@ end.parse!
 
 raise OptionParser::MissingArgument if options[:port].nil?
 
-def logf(message)
-  p "JLC (ruby): #{message}"
-end
-
-logf "Connecting to port #{options[:port]}"
-logf "Loading ruby step definitions"
+@logger.debug("Connecting to port #{options[:port]}")
+@logger.debug("Loading ruby step definitions")
 Dir["./features/step_definitions/*.rb"].each { |file| require file }
 
 EM.run {
   ws = Faye::WebSocket::Client.new("ws://localhost:#{options[:port]}/jukebox")
 
   ws.on :open do |event|
-    p [:open]
+    @logger.debug([:open])
     clientid = SecureRandom.uuid
-    logf 'Connection established'
-    logf "Registering as clientid #{clientid}"
-    logf "Registering step inventory: #{Jukebox.steps.keys}"
+    @logger.debug('Connection established')
+    @logger.debug("Registering as clientid #{clientid}")
+    @logger.debug("Registering step inventory: #{Jukebox.steps.keys}")
     ws.send(JSON[{
       'action': 'register',
       'clientid': clientid,
@@ -52,29 +53,28 @@ EM.run {
   end
 
   ws.on :message do |event|
-    # p [:message, event.data]
     message = JSON.parse(event.data)
     case message['action']
     when 'step'
-      logf "Running step: #{message['step']}"
+      @logger.debug("Running step: #{message['step']}")
       message['action'] = 'result'
       message['board'] = Jukebox.run_step(message['step'], message['board'], message['args'])
       ws.send(JSON[message])
     when 'stop'
-      log 'Closing connection'
+      @logger.debug('Closing connection')
       ws.close
     else
-      logf "Don't know how to handle request: #{message}"
+      @logger.error("Don't know how to handle request: #{message}")
     end
   end
 
   ws.on :error do |event|
-    logf "Error: #{event}"
+    @logger.error("Error: #{event}")
   end
 
   ws.on :close do |event|
-    p [:close, event.code, event.reason]
+    @logger.debug([:close, event.code, event.reason])
     ws = nil
-    logf 'Closed connection'
+    @logger.debug('Closed connection')
   end
 }

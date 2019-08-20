@@ -8,11 +8,6 @@
             [manifold.stream :as s])
   (:import java.util.UUID))
 
-(defn logf
-  "Log a messagate to stdout."
-  [fmt & args]
-  (.printf (System/out) (str "JLC (clojure): " fmt "\n") (into-array Object args)))
-
 (defn ->definitions
   "Return an atom that will be used to track step definitions as they are loaded."
   []
@@ -54,7 +49,7 @@
 (defn execute-step
   "Execute a step."
   [{:keys [step board args] :as message}]
-  (logf "Received request to execute step: %s" {:step step :board board :args args})
+  (log/debugf "Received request to execute step: %s" {:step step :board board :args args})
   (if-let [f (get-in @definitions [:steps step])]
     (try
       (assoc message
@@ -78,7 +73,7 @@
   "Stop the jukebox language client."
   []
   (when @ws
-    (logf "Stopping")
+    (log/debugf "Stopping")
     (.close (:sock @ws))
     (reset! ws nil)))
 
@@ -91,7 +86,7 @@
   ""
   [message]
   (if (= :timeout message)
-    (logf "timed out")
+    (log/errorf "timed out")
     (let [message (binding [parse/*use-bigdecimals?* true]
                     (json/parse-string message true))]
       (case (:action message)
@@ -105,17 +100,17 @@
   (if @ws
     (stop)
     (do
-      (logf "Scanning for step definitions")
+      (log/debugf "Scanning for step definitions")
       (scan-steps glue-paths)
 
-      (logf "Connecting")
+      (log/debugf "Connecting")
       (reset! ws {:sock @(http/websocket-client (format "ws://localhost:%s/jukebox" port))
                   :clientid (str (UUID/randomUUID))})
 
-      (logf "Listening for step instructions...")
+      (log/debugf "Listening for step instructions...")
       (s/consume #'handle-coordinator-message (:sock @ws))
 
-      (logf "Sending step inventory")
+      (log/debugf "Sending step inventory")
       (send! {"action" "register"
               "clientid" (:clientid @ws)
               "language" "clojure"
