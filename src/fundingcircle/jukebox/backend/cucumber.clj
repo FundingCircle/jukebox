@@ -108,10 +108,10 @@
     ;; call step
     (try
       (swap! world (update-world (fn [world]
-                                   @(step-coordinator/drive-step
-                                     pattern
-                                     (assoc world :scene/step pattern)
-                                     (mapv process-arg args)))))
+                                   (step-coordinator/drive-step
+                                    pattern
+                                    (assoc world :scene/step pattern)
+                                    (mapv process-arg args)))))
       (catch Throwable e
         (swap! world assoc :scene/exception e)))
 

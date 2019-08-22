@@ -7,7 +7,8 @@
             [compojure.route :as route]
             [fundingcircle.jukebox.step-client.jlc-clojure :as jlc-clojure]
             [manifold.deferred :as d]
-            [manifold.stream :as s]))
+            [manifold.stream :as s]
+            [clojure.string :as str]))
 
 (defonce client-count (atom 0))
 (defonce registration-completed (atom nil))
@@ -20,18 +21,29 @@
   [clientid message]
   (s/put! (get @ws clientid) (json/generate-string message)))
 
+(defn- stack-trace-element
+  "Deserialize a stack trace."
+  [{:keys [class-name method-name file-name line-number]}]
+  (StackTraceElement. class-name method-name file-name line-number))
+
 (defn drive-step
   ""
   [step board args]
   (if-let [clientid (get @jlc-step-registry step)]
     (do
       (log/debugf "Sending request to client %s to execute step: %s: %s" clientid step args)
+      (reset! result-received (d/deferred))
       (send! clientid {"action" "step"
                        "step" step
                        "args" args
                        "board" board})
-      (reset! result-received (d/deferred))
-      @result-received)
+      (let [result @@result-received]
+        (log/debugf "Step result: %s" result)
+        (when (:error result)
+          (let [e (RuntimeException. (str "Step exception: " (:error result)))]
+            (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
+            (throw e)))
+        (:board result)))
     (log/errorf "No client knows how to handle step: %s" step)))
 
 (defn register-client-steps
@@ -51,8 +63,7 @@
     (log/errorf "timed out")
     (let [message (json/parse-string message true)]
       (case (:action message)
-        "response" (log/debugf "received step result: %s" message)
-        "result" (d/success! @result-received (:board message))
+        "result" (d/success! @result-received message)
         (log/errorf "Don't know how to handle message: %s" message)))))
 
 (defn step-request

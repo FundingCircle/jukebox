@@ -36,18 +36,19 @@
   {:scene/step "I have {int} cukes in my belly"
    :scene/resources [:kafka/topic "topic-name"]}
   [board number-of-cukes]
+  (throw (ex-info "a" {}))
   (helper-fn-a)
   (helper-fn-b)
   (helper-fn-d)
   (helper-fn-e)
   board)
 
-#_(defn i-wait-hour
+(defn i-wait-hour
   {:scene/step "I wait {int} hour"}
   [board number-of-hours]
   board)
 
-#_(defn my-belly-should-growl
+(defn my-belly-should-growl
   {:scene/step "my belly should growl"}
   [board]
   board)
@@ -55,11 +56,13 @@
 (defn i-have-this-table
   {:scene/step "I have this table"}
   [board data-table]
+  (throw (ex-info "b" {}))
   (assoc board :table data-table))
 
 (defn the-datafied-table-should-be-foo-col-bar
   {:scene/step "the datafied table should be"}
   [board datafied-table]
+  (throw (ex-info "c" {}))
   (assert (= (:table board)
              (read-string datafied-table)))
   board)

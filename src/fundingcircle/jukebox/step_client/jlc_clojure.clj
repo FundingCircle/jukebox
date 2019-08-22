@@ -49,23 +49,31 @@
 (defn execute-step
   "Execute a step."
   [{:keys [step board args] :as message}]
-  (log/debugf "Received request to execute step: %s" {:step step :board board :args args})
+  (log/debugf "Received request to execute step: %s" {:step step :args args :board board })
   (if-let [f (get-in @definitions [:steps step])]
     (try
+      (log/debugf "Running step: %s" {:step step :f f :args args :board board})
       (assoc message
              :action "result"
              :board (apply f board args))
       (catch Throwable e
+        (log/debugf "Step threw exception: %s" {:step step :f f :args args :e e :board board})
         (assoc message
                :action "result"
                :error (.getMessage e)
-               :trace (mapv str (.getStackTrace e))
+               :trace (mapv (fn [t] {:class-name (.getClassName t)
+                                     :file-name (.getFileName t)
+                                     :line-number (.getLineNumber t)
+                                     :method-name (.getMethodName t)})
+                            (.getStackTrace e))
                :board board)))
-    (assoc message
-           :action "error"
-           :code "TODO"
-           :message (format "Don't know how to handle step: %s" step)
-           :board nil)))
+    (do
+      (log/errorf "Don't know how to handle step: %s" {:step step :f nil :args args :board board})
+      (assoc message
+             :action "error"
+             :code "TODO"
+             :message (format "Don't know how to handle step: %s" step)
+             :board nil))))
 
 (defonce ws (atom nil))
 
