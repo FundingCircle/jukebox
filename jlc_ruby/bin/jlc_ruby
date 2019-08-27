@@ -10,7 +10,7 @@ require 'optparse'
 require 'securerandom'
 
 @logger = Logger.new(STDOUT)
-@logger.level = Logger::ERROR
+@logger.level = Logger::DEBUG
 
 options = {}
 OptionParser.new do |opts|

@@ -138,9 +138,3 @@
   [glue-paths clients]
   (stop)
   (start glue-paths clients))
-
-(comment
-  (restart ["test/example"] [#'jlc-client/client])
-  (restart [] [])
-
-  )

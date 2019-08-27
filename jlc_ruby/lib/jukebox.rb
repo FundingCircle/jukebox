@@ -4,6 +4,11 @@ require 'logger'
 
 # Defines the Jukebox DSL
 module Jukebox
+  class PendingError < StandardError; end
+  class UndefinedError < StandardError; end
+
+  @@steps = {}
+
   class <<self
     def log
       @log ||= Logger.new(STDOUT)
@@ -11,25 +16,35 @@ module Jukebox
       @log
     end
 
-    attr_writer :steps
-
-    def steps
-      @steps || {}
-    end
+    # attr_accessor :steps
 
     def run_step(step, board, args)
-      proc_or_sym = Jukebox.steps[step]
+      @@steps ||= {}
+      proc_or_sym = @@steps[step]
       Jukebox.log.debug("Running step: #{step} with board: #{board} and args: #{args}: #{proc_or_sym}")
-      Jukebox.steps[step].call(board, *args)
+      raise UndefinedError unless proc_or_sym
+
+      @@steps[step].call(board, *args)
+    end
+
+    def unimplemented_step
+      raise PendingError
     end
   end
 
   # Registers a step definition
-  #
-  #   Step()
-  def Step(step, symbol = nil, &proc)
+  def step(step, symbol = nil, &proc)
     proc_or_sym = symbol || proc
-    Jukebox.steps ||= {}
-    Jukebox.steps[step] = proc_or_sym
+    raise UndefinedError unless proc_or_sym
+
+    @@steps[step] = proc_or_sym
   end
+
+  # Mark a step implementation as pending
+  def pending
+    raise PendingError
+  end
+
+
+  module_function :step
 end
