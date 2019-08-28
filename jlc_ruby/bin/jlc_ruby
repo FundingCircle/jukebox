@@ -4,17 +4,19 @@
 require 'eventmachine'
 require 'faye/websocket'
 require 'logger'
-require 'json'
 require 'jukebox'
+require 'json'
 require 'optparse'
 require 'securerandom'
 
 @logger = Logger.new(STDOUT)
-@logger.level = Logger::DEBUG
+@logger.level = Logger::WARN
+
+@logger.debug("GEM_PATH: #{ENV['GEM_PATH']}")
 
 options = {}
 OptionParser.new do |opts|
-  opts.banner = 'Usage: jlc_ruby [options]'
+  opts.banner = 'Usage: jlc_ruby [options] <glue paths>'
 
   opts.on('-p PORT', '--port PORT', Integer, 'Connect to step coordinator at PORT') do |port|
     options[:port] = port
@@ -26,12 +28,18 @@ OptionParser.new do |opts|
   end
 
 end.parse!
+glue_paths = ARGV
 
-raise OptionParser::MissingArgument if options[:port].nil?
+raise OptionParser::MissingArgument, 'No glue_paths specified' if glue_paths.empty?
+raise OptionParser::MissingArgument 'No port specified' if options[:port].nil?
+
+@logger.debug("Loading ruby step definitions")
+glue_paths.each do |path|
+  @logger.debug("Scanning glue path: #{path}")
+  Dir["./#{path}/**/*.rb"].each { |file| require(file)}
+end
 
 @logger.debug("Connecting to port #{options[:port]}")
-@logger.debug("Loading ruby step definitions")
-Dir["./features/step_definitions/*.rb"].each { |file| require file }
 
 EM.run {
   ws = Faye::WebSocket::Client.new("ws://localhost:#{options[:port]}/jukebox")

@@ -5,10 +5,14 @@
             [clojure.tools.logging :as log]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :as route]
-            [fundingcircle.jukebox.step-client.jlc-clojure :as jlc-clojure]
             [manifold.deferred :as d]
             [manifold.stream :as s]
-            [clojure.string :as str]))
+            [fundingcircle.jukebox.step-client :as step-client]))
+
+;; Jukebox language client launchers
+(require 'fundingcircle.jukebox.step-client.jlc-clojure)
+(require 'fundingcircle.jukebox.step-client.jlc-cli)
+(require 'fundingcircle.jukebox.step-client.jlc-jruby)
 
 (defonce client-count (atom 0))
 (defonce registration-completed (atom nil))
@@ -103,21 +107,19 @@
 
 (defn start
   "Start step coordinator."
-  [glue-paths clients]
+  [glue-paths client-configs]
   (when-not @server
     (let [steps-registered (d/deferred)
           s (http/start-server #'step-coordinator {:port 0})
           port (aleph.netty/port s)]
       (log/debugf "Started on port %s" port)
       (reset! server s)
-      (reset! client-count (count clients))
+      (reset! client-count (count client-configs))
       (reset! registration-completed steps-registered)
-      (doseq [client clients]
-        (log/infof "Spinning up jukebox language client: %s" client)
-        (client port glue-paths))
-      ;(log/debugf "Started")
-      steps-registered))
-  )
+      (doseq [client-config client-configs]
+        (log/infof "Spinning up jukebox language client: %s" client-config)
+        (step-client/launch client-config port glue-paths))
+      steps-registered)))
 
 (defn stop
   "Stop step coordinator."

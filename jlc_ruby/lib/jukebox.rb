@@ -12,11 +12,13 @@ module Jukebox
   class <<self
     def log
       @log ||= Logger.new(STDOUT)
-      @log.level = Logger::ERROR
+      @log.level = Logger::WARN
       @log
     end
 
-    # attr_accessor :steps
+    def steps
+      @@steps
+    end
 
     def run_step(step, board, args)
       @@steps ||= {}

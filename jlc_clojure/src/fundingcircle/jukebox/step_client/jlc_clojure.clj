@@ -5,6 +5,7 @@
             [cheshire.parse :as parse]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
+            [fundingcircle.jukebox.step-client :refer [launch]]
             [manifold.stream :as s])
   (:import java.util.UUID))
 
@@ -102,23 +103,22 @@
         "stop" (stop)
         (log/errorf "Don't know how to handle message: %s" message)))))
 
-(defn client
-  "Start the clojure step language client."
-  [port glue-paths]
+(defmethod launch "clojure-embedded"
+  [client-config port glue-paths]
   (if @ws
-    (stop)
+    (log/warn "Clojure jukebox language client is already running")
     (do
-      (log/debugf "Scanning for step definitions")
+      (log/debug "Scanning for step definitions")
       (scan-steps glue-paths)
 
-      (log/debugf "Connecting")
+      (log/debug "Connecting")
       (reset! ws {:sock @(http/websocket-client (format "ws://localhost:%s/jukebox" port))
                   :clientid (str (UUID/randomUUID))})
 
-      (log/debugf "Listening for step instructions...")
+      (log/debug "Listening for step instructions...")
       (s/consume #'handle-coordinator-message (:sock @ws))
 
-      (log/debugf "Sending step inventory")
+      (log/debug "Sending step inventory")
       (send! {"action" "register"
               "clientid" (:clientid @ws)
               "language" "clojure"

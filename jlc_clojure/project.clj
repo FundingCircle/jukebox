@@ -13,10 +13,12 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/tools.namespace "0.2.11"]
                  [venantius/yagni "0.1.7"]]
+  :resource-paths ["../jlc_ruby/jlc_ruby.jar"]
   :profiles {:dev {:aliases {"cucumber" ["run" "-m" "cucumber.api.cli.Main"
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
                                          "--plugin" "pretty"
                                          "test/features"]}
-                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]]}}
+                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]]
+                   :resource-paths ["../jlc_ruby/jlc_ruby.jar" "test/test.jar"]}}
   :aot [fundingcircle.jukebox.backend.cucumber])
