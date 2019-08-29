@@ -1,10 +1,12 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+<!--            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>-->
+<!--            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>-->
+            <pattern>%logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <logger name="fundingcircle.jukebox.step-coordinator" level="warn">
+    <logger name="fundingcircle.jukebox.step-coordinator" level="debug">
         <appender-ref ref="STDOUT"/>
     </logger>
     <logger name="fundingcircle.jukebox.step-client.jlc-clojure" level="warn">

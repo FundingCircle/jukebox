@@ -10,9 +10,10 @@ require 'optparse'
 require 'securerandom'
 
 @logger = Logger.new(STDOUT)
-@logger.level = Logger::WARN
+@logger.level = Logger::DEBUG
 
 @logger.debug("GEM_PATH: #{ENV['GEM_PATH']}")
+p "Log level: #{@logger.level}"
 
 options = {}
 OptionParser.new do |opts|
@@ -33,7 +34,7 @@ glue_paths = ARGV
 raise OptionParser::MissingArgument, 'No glue_paths specified' if glue_paths.empty?
 raise OptionParser::MissingArgument 'No port specified' if options[:port].nil?
 
-@logger.debug("Loading ruby step definitions")
+p("Loading ruby step definitions in glue paths: #{glue_paths}")
 glue_paths.each do |path|
   @logger.debug("Scanning glue path: #{path}")
   Dir["./#{path}/**/*.rb"].each { |file| require(file)}

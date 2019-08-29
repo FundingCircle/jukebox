@@ -4,7 +4,7 @@
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox.step-client :refer [launch]]))
 
-(defmethod launch "cmd"
+(defmethod launch "jlc-cli"
   [{:keys [cmd env dir]} port glue-paths]
   (log/debugf "Starting '%s' on port %s - glue paths: %s" cmd port glue-paths)
   (let [args (concat cmd glue-paths ["--port" (str port) :env env :dir dir])

@@ -9,11 +9,7 @@
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
             [fundingcircle.jukebox.step-coordinator :as step-coordinator]
-            [fundingcircle.jukebox.step-client.jlc-clojure :as jlc-clojure]
-            [fundingcircle.jukebox.step-client :as step-client]
-            [clojure.string :as string]
-            [clojure.java.io :as io]
-            [cheshire.core :as json])
+            [clojure.string :as string])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
            [io.cucumber.stepexpression ExpressionArgumentMatcher StepExpressionFactory TypeRegistry]
@@ -266,20 +262,11 @@
   [_resource-loader _type-registry]
   [[] nil])
 
-(defn- language-client-configs
-  "Load language client configs from a json file named `.jukebox` on the classpath."
-  []
-  (into
-    (-> (try (slurp (io/resource ".jukebox")) (catch Exception _ "[]"))
-        (json/parse-string true)
-        :language-clients)
-    ;; spin up clojure & jruby as default
-    [{:language "ruby" :launcher "jruby-embedded"}
-     {:language "clojure" :launcher "clojure-embedded"}]))
+
 
 (defn -loadGlue [_ glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
-  (let [steps @(step-coordinator/restart glue-paths (language-client-configs))]
+  (let [steps @(step-coordinator/restart glue-paths)]
     (doseq [step steps]
       (jukebox/register-step jukebox-backend step step-coordinator/drive-step))
     (swap! definitions set-glue glue)))

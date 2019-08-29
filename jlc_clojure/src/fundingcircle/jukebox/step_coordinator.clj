@@ -7,7 +7,8 @@
             [compojure.route :as route]
             [manifold.deferred :as d]
             [manifold.stream :as s]
-            [fundingcircle.jukebox.step-client :as step-client]))
+            [fundingcircle.jukebox.step-client :as step-client]
+            [clojure.java.io :as io]))
 
 ;; Jukebox language client launchers
 (require 'fundingcircle.jukebox.step-client.jlc-clojure)
@@ -105,11 +106,27 @@
 
 (defonce server (atom nil))
 
+(defn- language-client-configs
+  "Load language client configs from a json file named `.jukebox` on the classpath."
+  []
+
+  (log/debugf "cwd: %s" (System/getProperty "user.dir"))
+  (into
+    (-> (try (slurp (io/resource ".jukebox")) (catch Exception _ "[]"))
+        (json/parse-string true)
+        :language-clients)
+    ;; spin up clojure & jruby as default
+    [#_{:language "ruby" :launcher "jruby-embedded"}
+     #_{:language "ruby" :launcher "jlc-cli" :cmd ["ruby" "-I" "../../jlc_ruby/lib" "jlc_ruby"]}
+     {:language "ruby" :launcher "jlc-cli" :cmd ["test/bin/jlc_ruby"] :dir "."}
+     {:language "clojure" :launcher "clojure-embedded"}]))
+
 (defn start
   "Start step coordinator."
-  [glue-paths client-configs]
+  [glue-paths]
   (when-not @server
-    (let [steps-registered (d/deferred)
+    (let [client-configs (language-client-configs)
+          steps-registered (d/deferred)
           s (http/start-server #'step-coordinator {:port 0})
           port (aleph.netty/port s)]
       (log/debugf "Started on port %s" port)
@@ -135,8 +152,10 @@
     (.close @server)
     (reset! server nil)))
 
+
+
 (defn restart
   "Restart the step coordinator."
-  [glue-paths clients]
+  [glue-paths]
   (stop)
-  (start glue-paths clients))
+  (start glue-paths))

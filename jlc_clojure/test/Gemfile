@@ -2,7 +2,9 @@
 
 source 'https://rubygems.org'
 
+gem 'jukebox', path: '../../jlc_ruby'
 gem 'watir'
 gem 'webdrivers'
 gem 'faker'
 gem 'warbler'
+gem 'faye-websocket'
