@@ -9,6 +9,7 @@
   (future
     (try
       (log/debugf "Starting embedded script: '%s' on port %s - glue paths: %s" language port glue-paths)
-      (JarMain/main (into-array String (into ["--port" (str port)] glue-paths)))
+      ;; TODO: jruby
+      #_(JarMain/main (into-array String (into ["--port" (str port)] glue-paths)))
       (catch Exception e
         (.printStackTrace e)))))
