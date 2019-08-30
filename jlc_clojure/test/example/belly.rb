@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'jukebox'
-require 'watir'
-require 'webdrivers'
 
 # Example tests using jukebox
 module ExampleTests
@@ -24,18 +22,15 @@ module ExampleTests
 
   step 'I wait {int} hour' do |board, hours|
     # Write code here that turns the phrase above into concrete actions
-    p "Inside step - I wait {int} hour: board: #{board}, hours:A #{hours}"
-    browser = Watir::Browser.new
-    browser.goto( 'https://duckduckgo.com')
-    browser.text_field(id: 'search_form_input_homepage').set 'Funding Circle'
-    browser.send_keys :enter
-    sleep 3
-    browser.close
     board
   end
 
   step 'my belly should growl' do |board|
     # Write code here that turns the phrase above into concrete actions
     board
+  end
+
+  Before do
+    p "Before scenario from ruby"
   end
 end

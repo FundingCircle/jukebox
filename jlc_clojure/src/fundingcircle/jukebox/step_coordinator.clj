@@ -16,6 +16,7 @@
 (require 'fundingcircle.jukebox.step-client.jlc-jruby)
 
 (defonce client-count (atom 0))
+(defonce client-ids (atom #{}))
 (defonce registration-completed (atom nil))
 (defonce result-received (atom nil))
 (defonce jlc-step-registry (atom nil))
@@ -32,9 +33,9 @@
   (StackTraceElement. class-name method-name file-name line-number))
 
 (defn drive-step
-  ""
+  "Find a jukebox language client that knows about `step`, and ask for it to be run."
   [step board args]
-  (if-let [clientid (get @jlc-step-registry step)]
+  (if-let [clientid (get-in @jlc-step-registry [:steps step])]
     (do
       (log/debugf "Sending request to client %s to execute step: %s: %s" clientid step args)
       (reset! result-received (d/deferred))
@@ -51,15 +52,65 @@
         (:board result)))
     (log/errorf "No client knows how to handle step: %s" step)))
 
+#_(defn drive-hook
+  "Run hooks on all language clients."
+  [hook-id board scenario]
+  (doseq [client-id @client-ids]
+    (reset! result-received (d/deferred))
+    (send! client-id {"action" "hook"
+                      "hook_id" hook-id
+                      "board" board
+                      "scenario" scenario})
+    (let [result @@result-received]
+        (log/debugf "%s result: %s" action result)
+        (when (:error result)
+          (let [e (RuntimeException. (str "Step exception: " (:error result)))]
+            (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
+            (throw e)))
+        (:board result))))
+
 (defn register-client-steps
   "Register steps that a jukebox language client knows how to handle."
-  [{:keys [clientid language steps]}]
+  [{:keys [clientid language steps hooks]}]
   (log/debugf "Registering %s client (%s) steps: %s" language clientid steps)
+  (log/debugf "Step Registry BEFORE: %s" @jlc-step-registry)
   (swap! jlc-step-registry
+         update :steps
          merge
          (->> (map (fn [step] [step clientid]) steps)
               (into {})))
+  (log/debugf "Client (%s) hooks: %s" clientid hooks)
+  (log/debugf "Current registry hooks: %s" (:hooks-registry @jlc-step-registry))
+  (swap! jlc-step-registry update :hooks-registry conj hooks)
+  (swap! jlc-step-registry
+         update :hooks-index
+         merge
+         (->> (map (fn [{:keys [id]}] [id clientid])
+                   (concat (:before hooks) (:after hooks)))
+              (into {})))
+  (log/debugf "Step Registry AFTER: %s" @jlc-step-registry)
   {:status 202})
+
+(defn hook-fn
+  "Returns a hook fn that will dispatch to the registered hook by ID when called."
+  [hook-id]
+  (fn [board scenario]
+    (if-let [client-id (get-in @jlc-step-registry [:hooks-index hook-id])]
+      (do
+        (log/debugf "Sending request to client %s to execute hook: %s" client-id {:hook-id hook-id :board board :scenario scenario})
+        (reset! result-received (d/deferred))
+        (send! client-id {"action" "hook"
+                          "hook-id" hook-id
+                          "board" board
+                          "scenario" nil #_scenario})
+        (let [result @@result-received]
+          (log/debugf "Hook result: %s" result)
+          (when (:error result)
+            (let [e (RuntimeException. (str "Hook exception: " (:error result)))]
+              (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
+              (throw e)))
+          (:board result)))
+      (log/errorf "No client knows how to handle hook: %s" hook-id))))
 
 (defn handle-client-message
   ""
@@ -71,7 +122,8 @@
         "result" (d/success! @result-received message)
         (log/errorf "Don't know how to handle message: %s" message)))))
 
-(defn step-request
+(defn jlc-connected
+  "Called when a jukebox language client initially connects."
   [req]
   (if-let [socket (try
                     @(http/websocket-connection req)
@@ -85,10 +137,11 @@
           (swap! ws assoc clientid socket)
           (register-client-steps message)
           (swap! client-count dec)
+          (swap! client-ids conj clientid)
           (log/debugf "Remaining # of clients to register steps: %s" @client-count)
           (when (= 0 @client-count)
             (log/debugf "All clients have registered steps: %s" @jlc-step-registry)
-            (d/success! @registration-completed (keys @jlc-step-registry))))
+            (d/success! @registration-completed @jlc-step-registry)))
         (log/errorf "Didn't get registration message"))
       (s/consume #'handle-client-message socket)
       {:status 202})
@@ -100,7 +153,7 @@
        :body "Expected a websocket request."})))
 
 (defroutes step-coordinator
-  (GET "/jukebox" [] step-request)
+  (GET "/jukebox" [] jlc-connected)
   (GET "/status" []  {:status :ok})
   (route/not-found "No such route."))
 
@@ -112,7 +165,7 @@
 
   (log/debugf "cwd: %s" (System/getProperty "user.dir"))
   (into
-    (-> (try (slurp (io/resource ".jukebox")) (catch Exception _ "[]"))
+    (-> (try (slurp ".jukebox") (catch Exception _ "[]"))
         (json/parse-string true)
         :language-clients)
     ;; spin up clojure & jruby as default
@@ -151,8 +204,6 @@
     (log/debugf "Stopping")
     (.close @server)
     (reset! server nil)))
-
-
 
 (defn restart
   "Restart the step coordinator."

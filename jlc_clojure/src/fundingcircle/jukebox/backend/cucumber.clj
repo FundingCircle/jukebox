@@ -134,7 +134,7 @@
   (getLocation [_ detail?]
     (location hook-fn))
 
-  (execute [hd scenario]
+  (execute [_ scenario]
     (swap! world (update-world
                    (fn [world]
                      (hook-fn world {:status (.getStatus scenario)
@@ -143,10 +143,10 @@
                                      :id (.getId scenario)
                                      :uri (.getUri scenario)
                                      :lines (.getLines scenario)})))))
-  (matches [hd tags]
+  (matches [_ tags]
     (.apply tag-predicate tags))
 
-  (getOrder [hd] 0)
+  (getOrder [_] 0)
 
   (isScenarioScoped [hd] false))
 
@@ -262,13 +262,17 @@
   [_resource-loader _type-registry]
   [[] nil])
 
-
-
 (defn -loadGlue [_ glue glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
-  (let [steps @(step-coordinator/restart glue-paths)]
-    (doseq [step steps]
+
+
+  (let [{:keys [steps hooks-registry]} @(step-coordinator/restart glue-paths)]
+    (doseq [step (keys steps)]
       (jukebox/register-step jukebox-backend step step-coordinator/drive-step))
+    (doseq [{:keys [before after]} hooks-registry]
+      (log/debugf "Registering hooks: %s" {:before before :after after})
+      (doseq [{:keys [id tags]} before]
+        (jukebox/register-before-scene-hook jukebox-backend tags (step-coordinator/hook-fn id))))
     (swap! definitions set-glue glue)))
 
 (defn -buildWorld [_]

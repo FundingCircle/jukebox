@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'logger'
+require 'securerandom'
 
 # Defines the Jukebox DSL
 module Jukebox
@@ -8,6 +9,8 @@ module Jukebox
   class UndefinedError < StandardError; end
 
   @@steps = {}
+  @@hook_registry = {before: [], after: []}
+  @@hook_index = {}
   @@world = {}
 
   class <<self
@@ -21,9 +24,12 @@ module Jukebox
       @@steps
     end
 
+    def hook_registry
+      @@hook_registry
+    end
+
     def load_glue(file)
       glue = File.open(file)
-      # @@world.instance_eval glue.read, file
       instance_eval glue.read, file
     end
 
@@ -34,6 +40,13 @@ module Jukebox
       raise UndefinedError unless proc_or_sym
 
       @@steps[step].call(board, *args)
+    end
+
+    def run_hook(board, hook_id)
+      Jukebox.instance_eval do
+        @@hook_index[hook_id].call
+        board
+      end
     end
 
     def unimplemented_step
@@ -53,10 +66,10 @@ module Jukebox
     proc_or_sym = symbol || proc
     raise UndefinedError unless proc_or_sym
 
+    step = step.inspect[1..-2]
     p "REGISTERING STEP: #{step}: #{proc_or_sym}"
     @@steps[step] = Proc.new { |board, *args|
-      # @@world.instance_eval &proc_or_sym
-      Jukebox.instance_eval &proc_or_sym
+      Jukebox.instance_eval { proc_or_sym.call(*args) }
       board
     }
   end
@@ -66,13 +79,28 @@ module Jukebox
     false
   end
 
-  def Before(*tag_expressions, &proc)
-    raise UndefinedError unless proc
+  def Before(*tag_expressions, &before_proc)
+    raise UndefinedError unless before_proc
 
-    p "BEFORE: #{tag_expressions} #{proc}"
+    hook_id = SecureRandom.uuid
+    @@hook_registry[:before] << {
+      id: hook_id,
+      tags: tag_expressions
+    }
 
-    # @@world.instance_eval &proc_or_sym
-    Jukebox.instance_eval &proc
+    @@hook_index[hook_id] = before_proc
+  end
+
+  def After(*tag_expressions, &after_proc)
+    raise UndefinedError unless after_proc
+
+    hook_id = SecureRandom.uuid
+    @@hook_registry[:after] << {
+      id: hook_id,
+      tags: tag_expressions
+    }
+
+    @@hook_index[hook_id] = after_proc
   end
 
   def World(s)
@@ -83,7 +111,6 @@ module Jukebox
   alias When Given
   alias Then Given
   alias And Given
-  alias After Before
 
   # Mark a step implementation as pending
   def pending
