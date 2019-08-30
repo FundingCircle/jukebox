@@ -118,7 +118,7 @@
     ;; spin up clojure & jruby as default
     [#_{:language "ruby" :launcher "jruby-embedded"}
      #_{:language "ruby" :launcher "jlc-cli" :cmd ["ruby" "-I" "../../jlc_ruby/lib" "jlc_ruby"]}
-     {:language "ruby" :launcher "jlc-cli" :cmd ["test/bin/jlc_ruby"] :dir "."}
+     #_{:language "ruby" :launcher "jlc-cli" :cmd ["test/bin/jlc_ruby"] :dir "."}
      {:language "clojure" :launcher "clojure-embedded"}]))
 
 (defn start

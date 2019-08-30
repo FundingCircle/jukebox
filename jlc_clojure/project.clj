@@ -18,5 +18,6 @@
                                          "--plugin" "json:cucumber.json"
                                          "--plugin" "pretty"
                                          "test/features"]}
-                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]]}}
+                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]]
+                   :resource-paths ["test"]}}
   :aot [fundingcircle.jukebox.backend.cucumber])

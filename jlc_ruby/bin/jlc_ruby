@@ -34,10 +34,21 @@ glue_paths = ARGV
 raise OptionParser::MissingArgument, 'No glue_paths specified' if glue_paths.empty?
 raise OptionParser::MissingArgument 'No port specified' if options[:port].nil?
 
+$:.unshift "lib"
+
 p("Loading ruby step definitions in glue paths: #{glue_paths}")
 glue_paths.each do |path|
   @logger.debug("Scanning glue path: #{path}")
-  Dir["./#{path}/**/*.rb"].each { |file| require(file)}
+  $:.unshift "./#{path}/support"
+  Dir["./#{path}/**/support/**/*.rb"].sort.each { |file|
+    p "Loading GLUE file: #{file}"
+    # Jukebox::load_glue(file)
+    require file
+  }
+  Dir["./#{path}/**/step_definitions/**/*.rb"].sort.each { |file|
+    p "Loading GLUE file: #{file}"
+    Jukebox::load_glue(file)
+  }
 end
 
 @logger.debug("Connecting to port #{options[:port]}")
