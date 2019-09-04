@@ -15,15 +15,26 @@ module Jukebox
     module Scanner
       @logger = Logger.new(STDOUT)
       @logger.level = Logger::DEBUG
+      @cuke_keywords = Set[:Given, :Then, :When, :And, :BeforeStep, :AfterStep, :Before, :After]
 
       class << self
         # Scan for step definitions.
         def load_step_definitions!(glue_paths)
           @logger.debug("Glue paths: #{glue_paths}")
+          require_relative '../cukes'
+
           glue_paths.each do |path|
             Dir["./#{path}/**/*.rb"].each do |file|
               require file
             end
+          end
+        rescue NoMethodError => e
+          if @cuke_keywords.include?(e.name)
+            @logger.info("Detected cucumber project, switching to compatibility mode")
+            require_relative '../cukes'
+            Jukebox::Cukes.load_step_definitions!(glue_paths)
+          else
+            raise e
           end
         end
       end

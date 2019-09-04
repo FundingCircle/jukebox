@@ -1,2 +1,0 @@
-{"language-clients":
-  [{"language": "ruby", "launcher": "jlc-cli", "cmd": ["bundle", "exec", "jlc_ruby"]}]}

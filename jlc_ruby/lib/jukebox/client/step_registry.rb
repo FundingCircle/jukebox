@@ -5,7 +5,6 @@ require 'securerandom'
 
 module Jukebox
   module Client
-
     # Step registry.
     module StepRegistry
       @definitions = []

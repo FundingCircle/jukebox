@@ -5,9 +5,10 @@
             [clojure.tools.logging :as log]
             [compojure.core :refer [defroutes GET]]
             [compojure.route :as route]
+            [fundingcircle.jukebox.launcher :as step-client]
+            [fundingcircle.jukebox.launcher.auto :as auto]
             [manifold.deferred :as d]
-            [manifold.stream :as s]
-            [fundingcircle.jukebox.launcher :as step-client])
+            [manifold.stream :as s])
   (:import (java.io Closeable)))
 
 ;; Jukebox language client launchers
@@ -155,24 +156,27 @@
 (defn- language-client-configs
   "Load language client configs from a json file named `.jukebox` on the classpath."
   []
-
   (log/debugf "cwd: %s" (System/getProperty "user.dir"))
-  (into
-    (-> (try (slurp ".jukebox") (catch Exception _ "[]"))
-        (json/parse-string true)
-        :language-clients)
-    ;; spin up clojure as default
-    [{:language "clojure" :launcher "clojure-embedded"}]))
+  (let [project-configs   (into {} (-> (try (slurp ".jukebox") (catch Exception _ "{}"))
+                                       (json/parse-string true)))
+        language-clients  (into (:language-clients project-configs)
+                                [{:language "jlc-auto" :launcher "jlc-auto"}
+                                 {:language "clojure" :launcher "jlc-clj-embedded"}
+                                 {:language "ruby" :launcher "jlc-cli" :cmd ["bundle" "exec" "jlc_ruby"]}])
+        project-languages (into #{} (:languages project-configs))]
+    (when (:languages project-configs)
+      (filter #(project-languages (:language %)) language-clients))))
 
 (defn start
   "Start step coordinator."
   [glue-paths]
   (when-not @server
-    (let [client-configs (language-client-configs)
+    (let [client-configs   (or (language-client-configs) (auto/detect))
           steps-registered (d/deferred)
-          s (http/start-server #'step-coordinator {:port 0})
-          port (aleph.netty/port s)]
+          s                (http/start-server #'step-coordinator {:port 0})
+          port             (aleph.netty/port s)]
       (log/debugf "Started on port %s" port)
+      (log/debugf "")
       (reset! server s)
       (reset! client-count (count client-configs))
       (reset! registration-completed steps-registered)

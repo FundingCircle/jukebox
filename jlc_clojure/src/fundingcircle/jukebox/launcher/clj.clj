@@ -80,6 +80,6 @@ tagging it with `:scene/before-step` or `:scene/after-step`:
   (:require [fundingcircle.jukebox.launcher :refer [launch]]
             [fundingcircle.jukebox.client :as client]))
 
-(defmethod launch "clojure-embedded"
+(defmethod launch "jlc-clj-embedded"
   [client-config port glue-paths]
   (client/start client-config port glue-paths))

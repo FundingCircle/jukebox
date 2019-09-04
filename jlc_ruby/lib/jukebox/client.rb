@@ -25,7 +25,7 @@ module Jukebox
     class << self
       # Send a message to the jukebox coordinator.
       def send!(message)
-        message.deep_transform_keys! { |k| k.to_s.dasherize.to_sym }
+        message.deep_transform_keys! { |k| k.to_s.dasherize }
         @logger.debug("Sending message: #{message}")
         @ws.send(JSON[message])
       end
@@ -73,6 +73,16 @@ module Jukebox
         send!(error(message, e))
       end
 
+      @template = "  require 'jukebox'\n" \
+                  "  module 'MyTests'\n" \
+                  "    extend Jukebox\n" \
+                  "    \n" \
+                  "    step ''{1}'' do |{3}|\n" \
+                  "      pending! # {4}\n" \
+                  "      board # return the updated board\n" \
+                  "    end\n" \
+                  "  end\n"
+
       # Client details for this jukebox client
       def client_info
         { action: 'register',
@@ -83,15 +93,7 @@ module Jukebox
           snippet: {
             argument_joiner: ', ',
             escape_pattern: %w['\'' '\\\''],
-            template: "  require 'jukebox'\n" \
-                      "  module 'MyTests'\n" \
-                      "    extend Jukebox\n" \
-                      "    \n" \
-                      "    step ''{1}'' do |{3}|\n" \
-                      "      pending! # {4}\n" \
-                      "      board # return the updated board\n" \
-                      "    end\n" \
-                      "  end\n"
+            template: @template
           } }
       end
 

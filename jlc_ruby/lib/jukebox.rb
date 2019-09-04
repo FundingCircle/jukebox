@@ -22,11 +22,6 @@ module Jukebox
       @log
     end
 
-    # def load_glue(file)
-    #   glue = File.open(file)
-    #   instance_eval glue.read, file
-    # end
-
     def run_callback(id:, board:, args:, **)
       callback = Jukebox.callbacks[id]
       p "Running callback #{id}: #{callback} #{board} #{args}"

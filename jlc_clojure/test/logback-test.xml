@@ -6,22 +6,7 @@
             <pattern>%logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <logger name="fundingcircle.jukebox.backend.cucumber" level="debug">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-    <logger name="fundingcircle.jukebox.client" level="debug">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-    <logger name="fundingcircle.jukebox.step-coordinator" level="debug">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-    <logger name="fundingcircle.jukebox.step-client.jlc-clojure" level="debug">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-    <logger name="fundingcircle.jukebox.step-client.jlc-ruby" level="debug">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-    <logger name="fundingcircle.jukebox.step-client.jlc-cli" level="debug">
+    <logger name="fundingcircle.jukebox" level="debug">
         <appender-ref ref="STDOUT"/>
     </logger>
     <root level="error">

@@ -30,9 +30,6 @@
 (defn error
   "Create an error response message."
   [message e]
-  (log/debugf "Generating error: %s:" message)
-  (log/debugf "Generating error: %s:" e)
-
   (assoc message
     :action "result"
     :error (.getMessage e)
@@ -59,6 +56,15 @@
       (log/debugf "Callback threw exception: %s" message)
       (send! (error message e)))))
 
+(def ^:private template (str
+                          "  (defn {2}\n"
+                          "    \"Returns an updated context (`board`).\"\n"
+                          "    '{':scene/step \"{1}\"'}'\n"
+                          "    [{3}]\n"
+                          "    ;; {4}\n"
+                          "    (throw (cucumber.api.PendingException.))\n"
+                          "    board) ;; Return the board\n"))
+
 (defn client-info
   "Client details for this jukebox client."
   []
@@ -69,14 +75,7 @@
    "definitions" @registry/definitions
    "snippet" {"argument-joiner" " "
               "escape-pattern" ["\"" "\\\""]
-              "template" (str
-                           "  (defn {2}\n"
-                           "    \"Returns an updated context (`board`).\"\n"
-                           "    '{':scene/step \"{1}\"'}'\n"
-                           "    [{3}]\n"
-                           "    ;; {4}\n"
-                           "    (throw (cucumber.api.PendingException.))\n"
-                           "    board) ;; Return the board\n")}})
+              "template" template}})
 
 (defn start
   "Start this jukebox language client."

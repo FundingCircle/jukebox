@@ -1,16 +1,10 @@
 (ns fundingcircle.jukebox
   "Defines the Jukebox DSL."
-  (:require [fundingcircle.jukebox.client.step-registry :as registry]
-            [clojure.tools.logging :as log]))
+  (:require [fundingcircle.jukebox.client.step-registry :as registry]))
 
 (def ^:private trigger?
   ""
   (some-fn keyword? string?))
-
-(defmacro callback
-  ""
-  [args body]
-  `(fn ~args ~@body))
 
 (defmacro step
   "Defines a step.

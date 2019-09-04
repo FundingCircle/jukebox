@@ -64,11 +64,11 @@
      [{:id 55, :name \"foo\", :created-at 1293884100000}
       {:id 56, :name \"bar\", :created-at 1293884100000}]"
   [data]
-  (let [data (map seq (.asLists data))
+  (let [data        (map seq (.asLists data))
         header-keys (map keyword (first data))
-        row->hash (fn [row] (apply hash-map
-                                   (interleave header-keys
-                                               (map read-cuke-str row))))]
+        row->hash   (fn [row] (apply hash-map
+                                     (interleave header-keys
+                                                 (map read-cuke-str row))))]
     (mapv row->hash (next data))))
 
 (defmulti process-arg class)
@@ -93,11 +93,15 @@
   (execute [_ args]
     (try
       (swap! world (update-world (fn [world]
-                                   (step-coordinator/drive-step
-                                     id
-                                     (assoc world :scene/step pattern)
-                                     (mapv process-arg args)))))
+                                   (printf "WORLD BEFORE: %s\n" world)
+                                   (let [r (step-coordinator/drive-step
+                                             id
+                                             (assoc world :scene/step pattern)
+                                             (mapv process-arg args))]
+                                     (printf "WORLD AFTER: %s\n" r)
+                                     r))))
       (catch Throwable e
+        (printf "Caught exception: %s\n" {:world @world})
         (swap! world assoc :scene/exception e)))
 
     (when-let [e (:scene/exception @world)]
