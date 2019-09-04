@@ -30,7 +30,22 @@ module ExampleTests
     board
   end
 
-  Before do
+  step :before, :after_step, tags: "@tag1 or @tag2", resource: "asdf" do |board|
+    board
+  end
+
+  step :before, :after do |board|
+
+  end
+
+  step :before do |board|
+    board
+  end
+
+  require 'jukebox/cukes'
+  extend Jukebox::Cukes
+  Before do |board|
     p "Before scenario from ruby"
+    board
   end
 end

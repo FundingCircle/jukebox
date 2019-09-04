@@ -4,7 +4,7 @@
 require 'eventmachine'
 require 'faye/websocket'
 require 'logger'
-require 'jukebox'
+require_relative '../lib/jukebox/client'
 require 'json'
 require 'optparse'
 require 'securerandom'
@@ -13,103 +13,26 @@ require 'securerandom'
 @logger.level = Logger::DEBUG
 
 @logger.debug("GEM_PATH: #{ENV['GEM_PATH']}")
-p "Log level: #{@logger.level}"
 
-options = {}
+cli_options = {}
 OptionParser.new do |opts|
   opts.banner = 'Usage: jlc_ruby [options] <glue paths>'
 
-  opts.on('-p PORT', '--port PORT', Integer, 'Connect to step coordinator at PORT') do |port|
-    options[:port] = port
+  opts.on('-p PORT', '--port PORT', Integer,
+          'Connect to step coordinator at PORT') do |port|
+    cli_options[:port] = port
   end
 
-  opts.on("-h", "--help", "Prints this help") do
+  opts.on('-h', '--help', 'Prints this help') do
     puts opts
     exit
   end
-
 end.parse!
+
 glue_paths = ARGV
 
-raise OptionParser::MissingArgument, 'No glue_paths specified' if glue_paths.empty?
-raise OptionParser::MissingArgument 'No port specified' if options[:port].nil?
+raise OptionParser::MissingArgument, 'glue_paths' if glue_paths.empty?
+raise OptionParser::MissingArgument, 'No port specified' if cli_options[:port].nil?
 
-$:.unshift "lib"
-
-p("Loading ruby step definitions in glue paths: #{glue_paths}")
-glue_paths.each do |path|
-  if File.exist?("#{path}/step_definitions")
-    p "Scanning glue path w/step_definitions convention: #{path}"
-    $:.unshift "./#{path}/support"
-    Dir["#{path}/support/**/*.rb"].sort.each { |file|
-      p "Loading GLUE file: #{file}"
-      # Jukebox::load_glue(file)
-      require file
-    }
-    Dir["#{path}/step_definitions/**/*.rb"].sort.each { |file|
-      p "Loading GLUE file: #{file}"
-      Jukebox::load_glue(file)
-    }
-  else
-    @logger.debug("Scanning glue path #{path}")
-    p("Scanning glue path #{path}")
-    Dir["./#{path}/**/*.rb"].each { |file|
-      p "Loading GLUE file: #{file}"
-      require file
-    }
-  end
-end
-
-@logger.debug("Connecting to port #{options[:port]}")
-
-EM.run {
-  ws = Faye::WebSocket::Client.new("ws://localhost:#{options[:port]}/jukebox")
-
-  ws.on :open do |event|
-    @logger.debug([:open])
-    clientid = SecureRandom.uuid
-    @logger.debug('Connection established')
-    @logger.debug("Registering as clientid #{clientid}")
-    @logger.debug("Registering step inventory: #{Jukebox.steps.keys}")
-    ws.send(JSON[{
-      'action': 'register',
-      'clientid': clientid,
-      'language': 'ruby',
-      'version': '1',
-      'steps': Jukebox.steps.keys,
-      'hooks': Jukebox.hook_registry
-    }])
-    registered = true
-  end
-
-  ws.on :message do |event|
-    message = JSON.parse(event.data)
-    case message['action']
-    when 'step'
-      @logger.debug("Running step: #{message['step']}")
-      message['action'] = 'result'
-      message['board'] = Jukebox.run_step(message['step'], message['board'], message['args'])
-      ws.send(JSON[message])
-    when 'hook'
-      @logger.debug("Running hook: #{message['hook-id']}")
-      message['action'] = 'result'
-      message['board'] = Jukebox.run_hook(message['board'], message['hook-id'])
-      ws.send(JSON[message])
-    when 'stop'
-      @logger.debug('Closing connection')
-      ws.close
-    else
-      @logger.error("Don't know how to handle request: #{message}")
-    end
-  end
-
-  ws.on :error do |event|
-    @logger.error("Error: #{event}")
-  end
-
-  ws.on :close do |event|
-    @logger.debug([:close, event.code, event.reason])
-    ws = nil
-    @logger.debug('Closed connection')
-  end
-}
+$LOAD_PATH.unshift 'lib'
+Jukebox::Client.start(cli_options, cli_options[:port], glue_paths)

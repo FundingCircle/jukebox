@@ -1,7 +1,8 @@
 (ns fundingcircle.jukebox.resource-test
   "Test resource inventory library."
   (:require [clojure.test :refer [deftest is testing]]
-            [fundingcircle.jukebox.resource :as resource]))
+    ;[fundingcircle.jukebox.resource :as resource]
+            ))
 
 ;; These helper functions set up a call graph for the test below to cover these scenarios:
 ;; * The inventory should include resources on transitive functions

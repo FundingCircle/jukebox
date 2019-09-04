@@ -1,7 +1,7 @@
 (ns fundingcircle.jukebox.resource
   "Library for creating an inventory of resources needed to run tests."
-  (:require [fundingcircle.jukebox :as jukebox]
-            [fundingcircle.jukebox.backend.cucumber :as cucumber]
+  (:require [fundingcircle.jukebox.backend.cucumber :as cucumber]
+            [fundingcircle.jukebox.step-client.jlc-clojure :as jlc-clojure]
             [yagni.graph :as graph]
             [yagni.jvm :as jvm]
             [yagni.namespace :as namesp]
@@ -96,7 +96,7 @@
   "Returns a fn that obtains the inventory 'manifest' for a given var."
   [call-graph keys]
   (fn [[f]]
-    (when (jukebox/scene-related? (->var f))
+    (when (jlc-clojure/scene-related? (->var f))
       (let [fcg (flattened-call-graph f call-graph)]
         (let [r (resources f keys)]
           [f (into (if r #{r} #{})
@@ -132,8 +132,8 @@
   "Returns the step-definitions (clojure fn) matching `tags`."
   [tags]
   (let [definitions (cucumber/->definitions)
-        hooks (jukebox/hooks)]
-    (jukebox/register (cucumber/->CucumberJukeBackend definitions) hooks)
+        hooks (jlc-clojure/hooks)]
+    ;;(jukebox/register (cucumber/->CucumberJukeBackend definitions) hooks)
 
     (let [step-definitions
           (map

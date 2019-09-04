@@ -1,3 +1,11 @@
 Metrics/BlockLength:
   Exclude:
     - 'spec/**/*'
+
+Style/BlockComments:
+  Exclude:
+    - 'spec/**/*'
+
+Naming/MethodName:
+  Exclude:
+    - 'lib/jukebox/cukes.rb'

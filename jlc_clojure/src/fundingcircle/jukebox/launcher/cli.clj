@@ -1,8 +1,8 @@
-(ns fundingcircle.jukebox.step-client.jlc-cli
+(ns fundingcircle.jukebox.launcher.cli
   "A command-line based jukebox language client."
   (:require [me.raynes.conch.low-level :as sh]
             [clojure.tools.logging :as log]
-            [fundingcircle.jukebox.step-client :refer [launch]]))
+            [fundingcircle.jukebox.launcher :refer [launch]]))
 
 (defmethod launch "jlc-cli"
   [{:keys [cmd env dir]} port glue-paths]
@@ -13,4 +13,3 @@
         err (future (sh/stream-to p :err (System/err)))
         exit (future (sh/exit-code p))]
     {:out out :err err :exit exit}))
-

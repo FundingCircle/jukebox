@@ -1,4 +1,4 @@
-(ns fundingcircle.jukebox.step-client
+(ns fundingcircle.jukebox.launcher
   "Dispatcher for jukebox language clients.")
 
 (defmulti launch

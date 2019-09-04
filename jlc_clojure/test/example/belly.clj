@@ -1,4 +1,5 @@
-(ns example.belly)
+(ns example.belly
+  (:require [fundingcircle.jukebox :refer [step]]))
 
 (defn- helper-fn-a
   "A test helper fn."
@@ -29,12 +30,10 @@
 (defn ^:scene/before before-step
   "Called before a scenario."
   {:scene/resources [:kafka/topic "topic-name-d"]}
-  [board scenario]
+  [board _scenario]
   board)
 
-(defn i-have-cukes-in-my-belly
-  {:scene/step "I have {int} cukes in my belly"
-   :scene/resources [:kafka/topic "topic-name"]}
+(step "I have {int} cukes in my belly"
   [board number-of-cukes]
   (helper-fn-a)
   (helper-fn-b)
@@ -46,6 +45,15 @@
   {:scene/step "I have this table"}
   [board data-table]
   (assoc board :table data-table))
+
+(defn ^:scene/after to-run-after-scenario
+  {:scene/tags "@baz"}
+  [board _scenario]
+  board)
+
+(step :before {:tags "@foo or @bar"}
+  [board scenario]
+  board)
 
 (defn the-datafied-table-should-be-foo-col-bar
   {:scene/step "the datafied table should be"}

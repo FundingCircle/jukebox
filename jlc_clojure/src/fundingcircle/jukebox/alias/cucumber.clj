@@ -1,8 +1,7 @@
 (ns fundingcircle.jukebox.alias.cucumber
   "Entry point for cucumber command."
   (:require [clojure.edn :as edn]
-            [clojure.java.io :as io])
-  (:import cucumber.api.cli.Main))
+            [clojure.java.io :as io]))
 
 (defn- slurp-deps
   "Loads `deps.edn` in the current working directory."
