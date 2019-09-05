@@ -43,7 +43,7 @@ module Jukebox
         message.merge(
           action: 'error',
           message: exception.message,
-          trace: exception.backtrace_locations.map do |location|
+          trace: exception.backtrace_locations&.map do |location|
             { class_name: location.label,
               file_name: location.path,
               line_number: location.lineno,
@@ -69,7 +69,7 @@ module Jukebox
         else
           raise UnknownAction, "Unknown action: #{message[:action]}"
         end
-      rescue StandardError => e
+      rescue Exception => e
         send!(error(message, e))
       end
 

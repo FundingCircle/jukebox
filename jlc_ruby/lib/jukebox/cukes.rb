@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
+require 'rspec/expectations'
 require_relative '../jukebox'
 
 module Jukebox
   # Cucumber-compatibility layer
   module Cukes
+    include RSpec::Matchers
+
     def Given(trigger, symbol = nil, &block)
       proc_or_sym = symbol || block
       raise UndefinedError unless proc_or_sym
@@ -64,7 +67,7 @@ module Jukebox
       def load_support_files(path)
         $LOAD_PATH.unshift "./#{path}/support"
         Dir["./#{path}/support/**/*.rb"].sort.each do |file|
-          require file
+          load file
         end
       end
 
