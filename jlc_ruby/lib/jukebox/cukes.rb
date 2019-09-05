@@ -65,9 +65,6 @@ module Jukebox
         $LOAD_PATH.unshift "./#{path}/support"
         Dir["./#{path}/support/**/*.rb"].sort.each do |file|
           require file
-          # File.open(file) do |glue|
-          #   instance_eval glue.read, file
-          # end
         end
       end
 

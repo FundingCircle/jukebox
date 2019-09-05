@@ -113,7 +113,9 @@
         "error" (let [e (RuntimeException. (str "Exception: " (:message message)))]
                   (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace message))))
                   (stop)
-                  (throw e))
+                  (.printStackTrace e)
+                  (System/exit 1)                           ;; TODO: something better
+                  #_(throw e))
         (do
           (log/errorf "Don't know how to handle message: %s" message)
           (stop))))))

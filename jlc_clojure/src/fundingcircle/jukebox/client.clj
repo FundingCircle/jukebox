@@ -46,15 +46,16 @@
     (log/debugf "Coordinator message: %s" message)
     (let [message (binding [parse/*use-bigdecimals?* true]
                     (json/parse-string message true))]
-      (case (:action message)
-        "run" (send! (assoc message
-                       :action "result"
-                       :board (registry/run message)))
-        "stop" (stop)
-        (throw (ex-info (format "Unknown action: %s" message) {}))))
-    (catch Exception e
-      (log/debugf "Callback threw exception: %s" message)
-      (send! (error message e)))))
+      (try
+        (case (:action message)
+          "run" (send! (assoc message
+                         :action "result"
+                         :board (registry/run message)))
+          "stop" (stop)
+          (throw (ex-info (format "Unknown action: %s" message) {})))
+        (catch Exception e (error message e))))             ;; Error handling message
+    (catch Exception e                                      ;; Error parsing message
+      (send! (error {} e)))))
 
 (def ^:private template (str
                           "  (defn {2}\n"
