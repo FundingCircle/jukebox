@@ -8,42 +8,24 @@ module Jukebox
   module Cukes
     include RSpec::Matchers
 
-    def Given(trigger, symbol = nil, &block)
-      proc_or_sym = symbol || block
-      raise UndefinedError unless proc_or_sym
-
-      Jukebox.step(trigger) do |board, *args|
-        Cukes.instance_exec *args, &proc_or_sym
-        board
-      end
+    def Given(trigger, &block)
+      Cukes.step(trigger, &block)
     end
 
     def BeforeStep(tag_expressions = '', &block)
-      Jukebox.step(:before_step, tags: tag_expressions) do |board, *args|
-        Cukes.instance_exec *args, &block
-        board
-      end
+      Cukes.step(:before_step, tags: tag_expressions, &block)
     end
 
     def AfterStep(tag_expressions = '', &block)
-      Jukebox.step(:after_step, tags: tag_expressions) do |board, *args|
-        Cukes.instance_exec *args, &block
-        board
-      end
+      Cukes.step(:after_step, tags: tag_expressions, &block)
     end
 
     def Before(tag_expressions = '', &block)
-      Jukebox.step(:before, tags: tag_expressions) do |board, *args|
-        Cukes.instance_exec *args, &block
-        board
-      end
+      Cukes.step(:before, tags: tag_expressions, &block)
     end
 
     def After(tag_expressions = '', &block)
-      Jukebox.step(:after, tags: tag_expressions) do |board, *args|
-        Cukes.instance_exec *args, &block
-        board
-      end
+      Cukes.step(:after, tags: tag_expressions, &block)
     end
 
     def World(mixin)
@@ -84,6 +66,17 @@ module Jukebox
         glue_paths.each do |path|
           load_support_files(path)
           load_step_definitions(path)
+        end
+      end
+
+      def step(*triggers, **opts, &block)
+        Jukebox.step(*triggers, **opts) do |board, *args|
+          if block.arity == args.size + 1
+            Cukes.instance_exec board, *args, &block
+          else
+            Cukes.instance_exec *args, &block
+            board
+          end
         end
       end
     end

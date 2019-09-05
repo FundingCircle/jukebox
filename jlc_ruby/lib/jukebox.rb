@@ -32,8 +32,8 @@ module Jukebox
 
   end
 
-  def step(*triggers, **opts, &proc)
-    raise UndefinedError unless proc
+  def step(*triggers, **opts, &block)
+    raise UndefinedError unless block
 
     triggers.map! { |t| t.is_a?(Symbol) ? t.to_s : t.inspect[1..-2] }
     opts[:tags] = [opts[:tags]] if opts[:tags].is_a?(String)
@@ -44,7 +44,7 @@ module Jukebox
       triggers: triggers,
       opts: opts
     }
-    Jukebox.callbacks[id] = proc
+    Jukebox.callbacks[id] = block
   end
 
   # Mark a step implementation as pending
