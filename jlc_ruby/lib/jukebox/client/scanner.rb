@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require 'eventmachine'
@@ -14,8 +13,15 @@ module Jukebox
     # Scan paths for ruby step definitions.
     module Scanner
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::DEBUG
-      @cuke_keywords = Set[:Given, :Then, :When, :And, :BeforeStep, :AfterStep, :Before, :After]
+      @logger.level = Logger::WARN
+      @cuke_keywords = Set[:Given,
+                           :Then,
+                           :When,
+                           :And,
+                           :BeforeStep,
+                           :AfterStep,
+                           :Before,
+                           :After]
 
       class << self
         # Scan for step definitions.
@@ -29,13 +35,15 @@ module Jukebox
             end
           end
         rescue NoMethodError => e
-          if @cuke_keywords.include?(e.name)
-            @logger.info("Detected cucumber project, switching to compatibility mode")
-            require_relative '../cukes'
-            Jukebox::Cukes.load_step_definitions!(glue_paths)
-          else
-            raise e
-          end
+          raise e unless @cuke_keywords.include?(e.name)
+
+          enable_cucumber_compatibility(glue_paths)
+        end
+
+        def enable_cucumber_compatibility(glue_paths)
+          @logger.info('Switching to cucumber compatibility mode')
+          require_relative '../cukes'
+          Jukebox::Cukes.load_step_definitions!(glue_paths)
         end
       end
     end

@@ -56,7 +56,7 @@ module Jukebox
       def load_step_definitions(path)
         Dir["./#{path}/step_definitions/**/*.rb"].sort.each do |file|
           File.open(file) do |glue|
-            Cukes::instance_eval glue.read, file
+            Cukes.instance_eval glue.read, file
           end
         end
       end
@@ -72,16 +72,13 @@ module Jukebox
       def step(*triggers, **opts, &block)
         Jukebox.step(*triggers, **opts) do |board, *args|
           if block.arity == args.size + 1
-            Cukes.instance_exec board, *args, &block
+            Cukes.instance_exec(board, *args, &block)
           else
-            Cukes.instance_exec *args, &block
+            Cukes.instance_exec(*args, &block)
             board
           end
         end
       end
     end
-
-    # module_function :And, :Given, :When, :Then, :After, :Before, :failed?, :World
-
   end
 end

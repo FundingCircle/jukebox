@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require 'eventmachine'
@@ -20,7 +19,7 @@ module Jukebox
 
     @ws = nil
     @logger = Logger.new(STDOUT)
-    @logger.level = Logger::DEBUG
+    @logger.level = Logger::WARN
 
     class << self
       # Send a message to the jukebox coordinator.
@@ -73,15 +72,17 @@ module Jukebox
         send!(error(message, e))
       end
 
-      @template = "  require 'jukebox'\n" \
-                  "  module 'MyTests'\n" \
-                  "    extend Jukebox\n" \
-                  "    \n" \
-                  "    step ''{1}'' do |{3}|\n" \
-                  "      pending! # {4}\n" \
-                  "      board # return the updated board\n" \
-                  "    end\n" \
-                  "  end\n"
+      def template
+        "  require 'jukebox'\n" \
+        "  module 'MyTests'\n" \
+        "    extend Jukebox\n" \
+        "    \n" \
+        "    step ''{1}'' do |{3}|\n" \
+        "      pending! # {4}\n" \
+        "      board # return the updated board\n" \
+        "    end\n" \
+        "  end\n"
+      end
 
       # Client details for this jukebox client
       def client_info
@@ -93,7 +94,7 @@ module Jukebox
           snippet: {
             argument_joiner: ', ',
             escape_pattern: %w['\'' '\\\''],
-            template: @template
+            template: template
           } }
       end
 

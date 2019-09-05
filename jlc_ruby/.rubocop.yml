@@ -9,3 +9,7 @@ Style/BlockComments:
 Naming/MethodName:
   Exclude:
     - 'lib/jukebox/cukes.rb'
+
+Lint/RescueException:
+  Exclude:
+    - 'lib/jukebox/client.rb'

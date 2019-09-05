@@ -32,7 +32,7 @@ end.parse!
 glue_paths = ARGV
 
 raise OptionParser::MissingArgument, 'glue_paths' if glue_paths.empty?
-raise OptionParser::MissingArgument, 'No port specified' if cli_options[:port].nil?
+raise OptionParser::MissingArgument, 'port' if cli_options[:port].nil?
 
 $LOAD_PATH.unshift 'lib'
 Jukebox::Client.start(cli_options, cli_options[:port], glue_paths)

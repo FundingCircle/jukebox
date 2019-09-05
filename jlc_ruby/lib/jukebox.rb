@@ -5,9 +5,10 @@ require 'securerandom'
 
 # Defines the Jukebox DSL
 module Jukebox
-  class PendingError < StandardError;
+  class PendingError < StandardError
   end
-  class UndefinedError < StandardError;
+
+  class UndefinedError < StandardError
   end
 
   @definitions = []
@@ -24,12 +25,10 @@ module Jukebox
 
     def run_callback(id:, board:, args:, **)
       callback = Jukebox.callbacks[id]
-      p "Running callback #{id}: #{callback} #{board} #{args}"
       raise UndefinedError, "ID: #{id}: #{board}: #{args}" unless callback
 
       callback.call(board, *args)
     end
-
   end
 
   def step(*triggers, **opts, &block)
