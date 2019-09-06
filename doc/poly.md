@@ -49,56 +49,58 @@ Here are some example step definition snippets:
 
 ## Configuration
 A jukebox configuration can be defined explicitly if needed in a project by creating a `.jukebox` file with the following (JSON):
-    ```json
-    {"languages": ["ruby", "clojure"]}
-    ``` 
+```json
+{"languages": ["ruby", "clojure"]}
+``` 
 
 In addition, the launcher details can be configured if needed by adding the "language-clients" configuration. These are the defaults:
-    ```json
-    {"languages": ["ruby", "clojure"]
-     "language-clients": [{:language "clojure" :launcher "jlc-clj-embedded"}
-                          {:language "ruby" :launcher "jlc-cli" :cmd ["bundle" "exec" "jlc_ruby"]}]}
-    ```
+```json
+{"languages": ["ruby", "clojure"],
+ "language-clients": [{"language": "clojure", "launcher": "jlc-clj-embedded"},
+                      {"language": "ruby", "launcher": "jlc-cli", "cmd": ["bundle", "exec", "jlc_ruby"]}]}
+```
 
 ## Ruby Details
 ### Defining Step Definitions & Hooks
 Step definitions can be defined by requiring 'jukebox' and using `step`:
 
-      require jukebox
-      
-      module MyTests
-        extend Jukebox # Mixin `Jukebox.step` so it can be used as `step`
-        
-        step 'I have {int} cukes in my belly' do |board, int1|
-          pending! # Write code here that turns the phrase above into concrete actions
-          board # return the updated board
-        end
-        
-        step :before do |board scenario|
-          pending! # Write code here that runs before each scenario
-          board # return the updated board
-        end
-        
-        step :before {:tags "@user and @admin"} do |board|
-            pending! # Write code here that will run before each scenario that matches the tag expression
-            board # return the updated board
-        end
-        
-        step :after do |board scenario|
-          pending! # Write code here that runs after each scenario
-          board # return the updated board
-        end
+```ruby
+require jukebox
 
-        step :after_step do |board scenario|
-          pending! # Write code here that runs before each step
-          board # return the updated board
-        end
-        
-        step :before_step do |board scenario|
-          pending! # Write code here that runs after each step
-          board # return the updated board
-        end
-      end
+module MyTests
+  extend Jukebox # Mixin `Jukebox.step` so it can be used as `step`
+    
+  step 'I have {int} cukes in my belly' do |board, int1|
+    pending! # Write code here that turns the phrase above into concrete actions
+    board # return the updated board
+  end
+    
+  step :before do |board scenario|
+    pending! # Write code here that runs before each scenario
+    board # return the updated board
+  end
+    
+  step :before {:tags "@user and @admin"} do |board|
+      pending! # Write code here that will run before each scenario that matches the tag expression
+      board # return the updated board
+  end
+    
+  step :after do |board scenario|
+    pending! # Write code here that runs after each scenario
+    board # return the updated board
+  end
+    
+  step :after_step do |board scenario|
+    pending! # Write code here that runs before each step
+    board # return the updated board
+  end
+    
+  step :before_step do |board scenario|
+    pending! # Write code here that runs after each step
+    board # return the updated board
+  end
+end
+```
 
 ### Cucumber Compatibility
 If a step is defined in a cucumber style (`When`, `Then`, etc), then the Ruby jukebox language client will switch to Cucumber compatibility mode. This mode replicates / requires the code to be laid out in the cucumber conventions. In compatibility mode, the `board` is not provided to the step definition, unless the arity supports it.
@@ -107,48 +109,48 @@ If a step is defined in a cucumber style (`When`, `Then`, etc), then the Ruby ju
 ### Defining steps with metadata tags
 Functions can be tagged as step definitions using function meta:
 
-    ```clojure
-    (defn i-have-cukes-in-my-belly
-      "Returns an updated context (`board`)."
-      {:scene/step "I have {int} cukes in my belly"}
-      [board, int1]
-      ;; Write code here that turns the phrase above into concrete actions
-      (throw (cucumber.api.PendingException.))
-      board) ;; Return the board
-    ```
+```clojure
+(defn i-have-cukes-in-my-belly
+  "Returns an updated context (`board`)."
+  {:scene/step "I have {int} cukes in my belly"}
+  [board, int1]
+  ;; Write code here that turns the phrase above into concrete actions
+  (throw (cucumber.api.PendingException.))
+  board) ;; Return the board
+```
       
 Functions can be tagged as hooks with the metadata keys: `:step/before`, `:step/after`, `:step/before-step`, or `:step/after-step`:
-    ```clojure
-    (defn ^:scene/before webdriver-initialize
-      "Initialize a webdriver."
-      [board scenario]
-      (assoc board :web-driver (web/driver)))
-    ```
+```clojure
+(defn ^:scene/before webdriver-initialize
+  "Initialize a webdriver."
+  [board scenario]
+  (assoc board :web-driver (web/driver)))
+```
     
 ### Defining steps with the `step` macro
 Steps can now alternatively be defined with the `step` macro that works like the Ruby version:
 
-    ```clojure
-    (ns example.belly
-      (:require [fundingcircle.jukebox :refer [step]]))
-      
-    (step "I have {int} cukes in my belly"
-      [board int1]
-      board) ;; return the updated board
-     
-    (step :before ;; Run before every scenario
-      [board scenario]
-      board)
-       
-    (step :before-step {:tags "@user and @admin"} ;; Run before the scenarios with the matching tags
-      [board scenario]
-      board)
-       
-    (step :after ;; Run after each scenario
-      [board scenario]
-      board)
-       
-    (step :after-step ;; Run after each step
-      [board scenario]
-      board)       
-    ```
+```clojure
+(ns example.belly
+  (:require [fundingcircle.jukebox :refer [step]]))
+  
+(step "I have {int} cukes in my belly"
+  [board int1]
+  board) ;; return the updated board
+ 
+(step :before ;; Run before every scenario
+  [board scenario]
+  board)
+   
+(step :before-step {:tags "@user and @admin"} ;; Run before the scenarios with the matching tags
+  [board scenario]
+  board)
+   
+(step :after ;; Run after each scenario
+  [board scenario]
+  board)
+   
+(step :after-step ;; Run after each step
+  [board scenario]
+  board)       
+```
