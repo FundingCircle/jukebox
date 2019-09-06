@@ -1,5 +1,6 @@
 (ns fundingcircle.jukebox.client.step-registry
   "Step registry."
+  (:require [clojure.tools.logging :as log])
   (:import (java.util UUID)))
 
 (defonce definitions (atom []))
@@ -19,4 +20,5 @@
   [{:keys [id board args] :as message}]
   (let [callback (get @callbacks id)]
     (when-not callback (throw (ex-info "Undefined callback" {:message message})))
+    (log/debugf "Running step %s: %s" id {:board board :args args})
     (apply callback board args)))

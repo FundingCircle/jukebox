@@ -6,9 +6,9 @@
             <pattern>%logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <logger name="fundingcircle.jukebox" level="debug">
-        <appender-ref ref="STDOUT"/>
-    </logger>
+<!--    <logger name="fundingcircle.jukebox" level="debug">-->
+<!--        <appender-ref ref="STDOUT"/>-->
+<!--    </logger>-->
     <root level="error">
         <appender-ref ref="STDOUT" />
     </root>

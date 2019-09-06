@@ -35,7 +35,7 @@ module ExampleTests
   end
 
   step :before, :after do |board|
-
+    board
   end
 
   step :before do |board|

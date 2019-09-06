@@ -13,6 +13,6 @@ Gem::Specification.new do |spec|
   spec.license = 'BSD-3-clause'
   spec.add_runtime_dependency 'activesupport'
   spec.add_runtime_dependency 'faye-websocket'
-  spec.add_development_dependency 'rspec'
+  spec.add_runtime_dependency 'rspec'
   spec.add_development_dependency 'warbler'
 end

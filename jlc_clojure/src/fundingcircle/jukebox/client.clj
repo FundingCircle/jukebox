@@ -14,11 +14,49 @@
   (:gen-class))
 
 (defonce ws (atom nil))
+(defonce local-board (atom nil))
+
+(defn- ->jsonable
+  "Removes non-json-able entries from the map, stashing non-serializable values in `local-board`."
+  ([m] (->jsonable m []))
+  ([m ks]
+   (let [local-board (volatile! nil)
+         board (->jsonable m ks local-board)]
+     {:board board :local-board @local-board}))
+  ([m ks local-board]
+   (into {}
+    (for [[k v] m]
+      (cond
+        (map? v)
+        (do
+          [k (->jsonable v (conj ks k) local-board)])
+
+        ;; TODO: vectors
+
+        :else
+        (try
+          (json/generate-string v)
+          [k v]
+          (catch Exception _
+            (log/warnf "Note: Board entry can't be transmitted across languages: %s" [ks v])
+            (swap! local-board assoc (conj ks k) v)
+            nil)))))))
+
+(defn- jsonable->
+  "Parse json & merge with local board"
+  [s]
+  (reduce (fn [m [ks v]] (assoc-in m ks v))
+          (binding [parse/*use-bigdecimals?* true]
+            (json/parse-string s true))
+          @local-board))
 
 (defn send!
   "Send a message to the jukebox coordinator."
   [message]
-  (s/put! @ws (json/generate-string message)))
+  (log/debugf "Sending message to coordinator: %s" message)
+  (let [jsonable (->jsonable message)]
+    (reset! local-board (:local-board jsonable))
+    (s/put! @ws (json/generate-string (:board jsonable)))))
 
 (defn stop
   "Stop the clojure jukebox language client."
@@ -30,8 +68,10 @@
 (defn error
   "Create an error response message."
   [message e]
+  (log/debugf "Step threw exception: %s" e)
+  (.printStackTrace e)
   (assoc message
-    :action "result"
+    :action "error"
     :error (.getMessage e)
     :trace (mapv (fn [t] {:class-name (.getClassName t)
                           :file-name (.getFileName t)
@@ -44,8 +84,7 @@
   [message]
   (try
     (log/debugf "Coordinator message: %s" message)
-    (let [message (binding [parse/*use-bigdecimals?* true]
-                    (json/parse-string message true))]
+    (let [message (jsonable-> message)]
       (try
         (case (:action message)
           "run" (send! (assoc message

@@ -162,8 +162,7 @@
   (let [project-configs   (into {} (-> (try (slurp ".jukebox") (catch Exception _ "{}"))
                                        (json/parse-string true)))
         language-clients  (into (:language-clients project-configs)
-                                [{:language "jlc-auto" :launcher "jlc-auto"}
-                                 {:language "clojure" :launcher "jlc-clj-embedded"}
+                                [{:language "clojure" :launcher "jlc-clj-embedded"}
                                  {:language "ruby" :launcher "jlc-cli" :cmd ["bundle" "exec" "jlc_ruby"]}])
         project-languages (into #{} (:languages project-configs))]
     (when (:languages project-configs)

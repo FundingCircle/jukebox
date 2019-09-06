@@ -30,7 +30,7 @@
   (fn [world & args]
     (let [new-world (apply f world args)]
       (when-not (get new-world ::world?)
-        (log/errorf "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)"))
+        (throw (ex-info "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)" {})))
       new-world)))
 
 (defn- location
@@ -93,15 +93,11 @@
   (execute [_ args]
     (try
       (swap! world (update-world (fn [world]
-                                   (printf "WORLD BEFORE: %s\n" world)
-                                   (let [r (step-coordinator/drive-step
-                                             id
-                                             (assoc world :scene/step pattern)
-                                             (mapv process-arg args))]
-                                     (printf "WORLD AFTER: %s\n" r)
-                                     r))))
+                                   (step-coordinator/drive-step
+                                     id
+                                     (assoc world :scene/step pattern)
+                                     (mapv process-arg args)))))
       (catch Throwable e
-        (printf "Caught exception: %s\n" {:world @world})
         (swap! world assoc :scene/exception e)))
 
     (when-let [e (:scene/exception @world)]
