@@ -48,4 +48,9 @@ module ExampleTests
     p "Before scenario from ruby"
     board
   end
+
+  step 'a ruby step that fails' do |board|
+    pending! # Write code here that turns the phrase above into concrete actions
+    board # return the updated board
+  end
 end

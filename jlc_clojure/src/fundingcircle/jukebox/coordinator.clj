@@ -48,7 +48,25 @@
                         "args" args})
       (let [result @@result-received]
         (log/debugf "Step result: %s" result)
-        (when (:error result)
+        (let [message result]
+          (case (:action message)
+            "result" (:board result)
+            "error" (let [e (RuntimeException. (str "Step exception: " (get result "error")))]
+                      (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
+                      (throw e))
+            #_(let [e (RuntimeException. (str "Exception: " (:message message)))]
+                (log/debugf "ERROR: %s" e)
+                (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace message))))
+                (d/error! @result-received e)
+                #_(.printStackTrace e)
+                #_(stop)
+                #_(throw e)
+                #_(System/exit 1)                           ;; TODO: something better
+                #_(throw e))
+            (do
+              (log/errorf "Don't know how to handle message: %s" message)
+              #_(stop))))
+        #_(when (:error result)
           (let [e (RuntimeException. (str "Step exception: " (:error result)))]
             (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
             (throw e)))
@@ -70,8 +88,8 @@
                       "args" [scenario]})
     (let [result @@result-received]
       (log/debugf "Hook result: %s" result)
-      (when (:error result)
-        (let [e (RuntimeException. (str "Step exception: " (:error result)))]
+      (when (get result "error")
+        (let [e (RuntimeException. (str "Step exception: " (get result "error")))]
           (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
           (throw e)))
       (:board result))))
@@ -93,12 +111,12 @@
   []
   (when @ws
     (log/debugf "Stopping jukebox language clients")
-    (doseq [client-id (keys @ws)]
-      (send! client-id {"action" "stop"}))
+    (doseq [[client-id client] @ws]
+      (s/put! client (json/generate-string {"action" "stop"}))
+      (s/close! client))
     (reset! ws nil))
 
   (when @server
-    (log/debugf "Stopping")
     (.close ^Closeable @server)
     (reset! server nil)))
 
@@ -110,12 +128,7 @@
     (let [message (json/parse-string message true)]
       (case (:action message)
         "result" (d/success! @result-received message)
-        "error" (let [e (RuntimeException. (str "Exception: " (:message message)))]
-                  (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace message))))
-                  (stop)
-                  (.printStackTrace e)
-                  (System/exit 1)                           ;; TODO: something better
-                  #_(throw e))
+        "error" (d/success! @result-received message)
         (do
           (log/errorf "Don't know how to handle message: %s" message)
           (stop))))))
@@ -141,6 +154,7 @@
             (log/debugf "All clients have registered steps: %s" @definitions)
             (d/success! @registration-completed {:definitions @definitions :snippets @snippets})))
         (log/errorf "Didn't get registration message"))
+      #_(handle-client-message socket)
       (s/consume #'handle-client-message socket)
       {:status 202})
 

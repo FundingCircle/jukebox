@@ -18,14 +18,52 @@ module Jukebox
     end
 
     @ws = nil
+    @local_board = {}
     @logger = Logger.new(STDOUT)
-    @logger.level = Logger::WARN
+    @logger.level = Logger::DEBUG
 
     class << self
+      def assoc_in(hash, key_path, value)
+        b = hash
+        key_path.each do |key|
+          b[key] |= {}
+          b = b[key]
+        end
+        b[key] = value
+        hash
+      end
+
+      # Removes non-serializable entries from the map, stashing them
+      # in `local-board`.
+      def to_jsonifiable(board, key_path = [], local_board = {})
+        return board, local_board if board.nil?
+
+        board.each do |key, value|
+          # TODO: arrays
+          if value.is_a?(Hash)
+            board[key] = to_jsonifiable(value, key_path << key, local_board)
+          else
+            begin
+              JSON.generate(value)
+            rescue StandardError
+              @logger.warn("Note: Board entry can't be transmitted across languages: '#{key}'': '#{value}'")
+              assoc_in(local_board, key_path, value)
+              board.except!(key)
+            end
+          end
+        end
+
+        [board, local_board]
+      end
+
+      def from_jsonifiable(board)
+        board&.deep_merge(@local_board)
+      end
+
       # Send a message to the jukebox coordinator.
       def send!(message)
+        message[:board], @local_board = to_jsonifiable(message[:board])
         message.deep_transform_keys! { |k| k.to_s.dasherize }
-        @logger.debug("Sending message: #{message}")
         @ws.send(JSON[message])
       end
 
@@ -53,20 +91,19 @@ module Jukebox
 
       # Run a step or hook
       def run(message)
-        message.merge(action: 'result',
-                      board: Jukebox::Client::StepRegistry.run(message))
+        message.merge(action: 'result', board: StepRegistry.run(message))
       end
 
       # Handle messages from the coordinator
       def handle_coordinator_message(message)
         message = JSON.parse(message.data)
-        message.deep_transform_keys! { |k| k.underscore.to_sym }
+                      .deep_transform_keys! { |k| k.underscore.to_sym }
+        message[:board] = from_jsonifiable(message[:board])
 
         case message[:action]
         when 'run' then send!(run(message))
         when 'stop' then stop!
-        else
-          raise UnknownAction, "Unknown action: #{message[:action]}"
+        else raise UnknownAction, "Unknown action: #{message[:action]}"
         end
       rescue Exception => e
         send!(error(message, e))

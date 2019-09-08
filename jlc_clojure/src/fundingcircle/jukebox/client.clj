@@ -9,12 +9,11 @@
             [fundingcircle.jukebox.client.step-registry :as registry]
             [fundingcircle.jukebox.client.scanner :as scanner]
             [clojure.string :as str])
-  (:import (java.util UUID)
-           (java.io Closeable))
+  (:import (java.util UUID))
   (:gen-class))
 
 (defonce ws (atom nil))
-(defonce local-board (atom nil))
+(defonce local-board (atom {}))
 
 (defn- ->jsonable
   "Removes non-json-able entries from the map, stashing non-serializable values in `local-board`."
@@ -39,7 +38,7 @@
           [k v]
           (catch Exception _
             (log/warnf "Note: Board entry can't be transmitted across languages: %s" [ks v])
-            (swap! local-board assoc (conj ks k) v)
+            (vswap! local-board assoc (conj ks k) v)
             nil)))))))
 
 (defn- jsonable->
@@ -62,7 +61,7 @@
   "Stop the clojure jukebox language client."
   []
   (when @ws
-    (.close ^Closeable @ws)
+    (.close @ws)
     (reset! ws nil)))
 
 (defn error

@@ -30,7 +30,7 @@
   (fn [world & args]
     (let [new-world (apply f world args)]
       (when-not (get new-world ::world?)
-        (throw (ex-info "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)" {})))
+        (throw (ex-info "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)" {:old-board world :new-board new-world})))
       new-world)))
 
 (defn- location
@@ -91,17 +91,12 @@
   (getParameterCount [_] nil)
 
   (execute [_ args]
-    (try
-      (swap! world (update-world (fn [world]
-                                   (step-coordinator/drive-step
-                                     id
-                                     (assoc world :scene/step pattern)
-                                     (mapv process-arg args)))))
-      (catch Throwable e
-        (swap! world assoc :scene/exception e)))
-
-    (when-let [e (:scene/exception @world)]
-      (throw e)))
+    (swap! world assoc :scene/step pattern)
+    (swap! world (update-world (fn [world]
+                                 (step-coordinator/drive-step
+                                   id
+                                   (assoc world :scene/step pattern)
+                                   (mapv process-arg args))))))
 
   (isDefinedAt [_ stack-trace-element]
     (let [{:keys [file line]} (meta step-fn)]
