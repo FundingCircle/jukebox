@@ -31,7 +31,7 @@ module Jukebox
 
         # Run a step or a hook
         def run(id:, board:, args:, **message)
-          callback = Jukebox.callbacks[id]
+          callback = Jukebox::Client::StepRegistry.callbacks[id]
           raise UndefinedError, "Undefined callback: #{message}" unless callback
 
           callback.call(board, *args)

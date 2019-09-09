@@ -7,7 +7,6 @@ require 'logger'
 require_relative '../lib/jukebox/client'
 require 'json'
 require 'optparse'
-require 'securerandom'
 
 @logger = Logger.new(STDOUT)
 @logger.level = Logger::INFO

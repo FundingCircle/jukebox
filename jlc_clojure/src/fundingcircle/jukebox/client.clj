@@ -27,8 +27,7 @@
     (for [[k v] m]
       (cond
         (map? v)
-        (do
-          [k (->jsonable v (conj ks k) local-board)])
+        [k (->jsonable v (conj ks k) local-board)]
 
         ;; TODO: vectors
 

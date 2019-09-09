@@ -173,18 +173,21 @@
   [[] nil])
 
 (defn -loadGlue [_ ^Glue glue glue-paths]
-  (log/debugf "Glue paths: %s" glue-paths)
-  (let [setup @(step-coordinator/restart glue-paths)]
+  (let [glue-paths glue-paths #_(mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
+        setup @(step-coordinator/restart glue-paths)]
     (reset! snippets (:snippets setup))
     (doseq [{:keys [id triggers opts]} (:definitions setup)]
       (doseq [trigger triggers]
         (log/debugf "Registering definition %s" {:id id :trigger trigger :opts opts})
-        (case trigger
-          "before" (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-          "after" (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-          "before-step" (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-          "after-step" (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-          (.addStepDefinition glue (->JukeStepDefinition id trigger step-coordinator/drive-step)))))))
+        (try
+         (case trigger
+           "before" (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           "after" (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           "before-step" (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           "after-step" (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           (.addStepDefinition glue (->JukeStepDefinition id trigger step-coordinator/drive-step)))
+         (catch cucumber.runtime.DuplicateStepDefinitionException _
+           (log/errorf "Duplicate step definition: %s" {:trigger trigger :tags (:tags opts) :id id :glue glue})))))))
 
 (defn -buildWorld [_]
   (reset! world {::world? true}))

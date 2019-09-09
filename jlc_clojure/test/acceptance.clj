@@ -15,6 +15,6 @@
 (deftest cukes
   (is (zero? (run-scenarios "@success"))))
 
-(deftest cukes
-  (is (thrown?  RuntimeException (run-scenarios "@failure-in-ruby")))
-  (is (thrown? RuntimeException (run-scenarios "@failure-in-clojure"))))
+#_(deftest cukes
+  (is (not (zero? (run-scenarios "@failure-in-ruby"))))
+  #_(is (not (zero? (run-scenarios "@failure-in-clojure")))))

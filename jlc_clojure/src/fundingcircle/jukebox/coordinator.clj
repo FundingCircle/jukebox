@@ -27,7 +27,6 @@
 (defn send!
   "Send a message to the language client over the web socket."
   [client-id message]
-  (log/debugf "Sending message to %s: %s" client-id message)
   (s/put! (get @ws client-id) (json/generate-string message)))
 
 (defn- stack-trace-element
@@ -35,41 +34,42 @@
   [{:keys [class-name method-name file-name line-number]}]
   (StackTraceElement. class-name method-name file-name line-number))
 
+(defonce server (atom nil))
+
+(defn stop
+  "Stop step coordinator."
+  []
+  (when @ws
+    (log/debugf "Stopping jukebox language clients")
+    (doseq [[_ client] @ws]
+      (s/put! client (json/generate-string {"action" "stop"}))
+      (s/close! client))
+    (reset! ws nil))
+
+  (when @server
+    (.close ^Closeable @server)
+    (reset! server nil)))
+
 (defn drive-step
   "Find a jukebox language client that knows about `step`, and ask for it to be run."
   [id board args]
   (if-let [client-id (get @callbacks id)]
     (do
-      (log/debugf "Sending request to client %s to execute step: %s: %s" client-id id args)
       (reset! result-received (d/deferred))
       (send! client-id {"action" "run"
                         "id" id
                         "board" board
                         "args" args})
       (let [result @@result-received]
-        (log/debugf "Step result: %s" result)
         (let [message result]
           (case (:action message)
             "result" (:board result)
             "error" (let [e (RuntimeException. (str "Step exception: " (get result "error")))]
                       (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
                       (throw e))
-            #_(let [e (RuntimeException. (str "Exception: " (:message message)))]
-                (log/debugf "ERROR: %s" e)
-                (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace message))))
-                (d/error! @result-received e)
-                #_(.printStackTrace e)
-                #_(stop)
-                #_(throw e)
-                #_(System/exit 1)                           ;; TODO: something better
-                #_(throw e))
             (do
               (log/errorf "Don't know how to handle message: %s" message)
-              #_(stop))))
-        #_(when (:error result)
-          (let [e (RuntimeException. (str "Step exception: " (:error result)))]
-            (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
-            (throw e)))
+              (stop))))
         (:board result)))
     (do
       (log/errorf "No client knows how to handle step: %s" id)
@@ -79,15 +79,12 @@
   "Run hooks on all language clients."
   [id board scenario]
   (let [client-id (get @callbacks id)]
-    (log/debugf "Sending request to client %s to execute hook: %s: %s" client-id id {:board board :scenario scenario})
-
     (reset! result-received (d/deferred))
     (send! client-id {"action" "run"
                       "id" id
                       "board" board
                       "args" [scenario]})
     (let [result @@result-received]
-      (log/debugf "Hook result: %s" result)
       (when (get result "error")
         (let [e (RuntimeException. (str "Step exception: " (get result "error")))]
           (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
@@ -104,34 +101,16 @@
   (swap! snippets conj (assoc (:snippet message) :language language))
   {:status 202})
 
-(defonce server (atom nil))
-
-(defn stop
-  "Stop step coordinator."
-  []
-  (when @ws
-    (log/debugf "Stopping jukebox language clients")
-    (doseq [[client-id client] @ws]
-      (s/put! client (json/generate-string {"action" "stop"}))
-      (s/close! client))
-    (reset! ws nil))
-
-  (when @server
-    (.close ^Closeable @server)
-    (reset! server nil)))
-
 (defn handle-client-message
   ""
   [message]
-  (if (= :timeout message)
-    (log/errorf "timed out")
-    (let [message (json/parse-string message true)]
-      (case (:action message)
-        "result" (d/success! @result-received message)
-        "error" (d/success! @result-received message)
-        (do
-          (log/errorf "Don't know how to handle message: %s" message)
-          (stop))))))
+  (let [message (json/parse-string message true)]
+    (case (:action message)
+      "result" (d/success! @result-received message)
+      "error" (d/success! @result-received message)
+      (do
+        (log/errorf "Don't know how to handle message: %s" message)
+        (stop)))))
 
 (defn jlc-connected
   "Called when a jukebox language client initially connects."
@@ -149,9 +128,7 @@
           (register-client-steps message)
           (swap! client-count dec)
           (swap! client-ids conj client-id)
-          (log/debugf "Remaining # of clients to register steps: %s" @client-count)
           (when (= 0 @client-count)
-            (log/debugf "All clients have registered steps: %s" @definitions)
             (d/success! @registration-completed {:definitions @definitions :snippets @snippets})))
         (log/errorf "Didn't get registration message"))
       #_(handle-client-message socket)
@@ -191,7 +168,6 @@
           s                (http/start-server #'step-coordinator {:port 0})
           port             (aleph.netty/port s)]
       (log/debugf "Started on port %s" port)
-      (log/debugf "")
       (reset! server s)
       (reset! client-count (count client-configs))
       (reset! registration-completed steps-registered)

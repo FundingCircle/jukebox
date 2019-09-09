@@ -37,6 +37,10 @@
   [dir]
   (mapcat find-hooks (require-namespaces-in-dir dir)))
 
+(defmethod find-hooks java.net.URI
+  [^java.net.URI uri]
+  (mapcat find-hooks (require-namespaces-in-dir (io/file (.getSchemeSpecificPart uri)))))
+
 (defmethod find-hooks String
   [dir]
   (mapcat find-hooks (require-namespaces-in-dir (io/file dir))))

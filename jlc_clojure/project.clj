@@ -9,7 +9,7 @@
                  [io.cucumber/cucumber-core "4.2.2"]
                  [io.cucumber/cucumber-junit "4.2.2"]
                  [me.raynes/conch "0.8.0"]
-                 [org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojure "1.10.1"]
                  [org.clojure/tools.cli "0.4.2"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/tools.namespace "0.2.11"]

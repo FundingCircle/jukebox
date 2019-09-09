@@ -127,7 +127,7 @@ module Jukebox
           client_id: SecureRandom.uuid,
           language: 'ruby',
           version: '1',
-          definitions: Jukebox.definitions,
+          definitions: Jukebox::Client::StepRegistry.definitions,
           snippet: {
             argument_joiner: ', ',
             escape_pattern: %w['\'' '\\\''],

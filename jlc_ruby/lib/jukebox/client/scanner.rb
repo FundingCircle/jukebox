@@ -5,7 +5,6 @@ require 'faye/websocket'
 require 'logger'
 require 'json'
 require 'optparse'
-require 'securerandom'
 
 # Scan the code
 module Jukebox
