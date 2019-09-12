@@ -26,8 +26,7 @@
                                       "    [{3}]\n"
                                       "    ;; {4}\n"
                                       "    (throw (cucumber.api.PendingException.))\n"
-                                      "    board) ;; Return the board\n")
-                         }
+                                      "    board) ;; Return the board\n")}
               "version" "1"})))))
 
 (deftest run-step

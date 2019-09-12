@@ -1,4 +1,6 @@
-require_relative '../../../../lib/jukebox'
+# frozen_string_literal: true
+
+require 'jukebox'
 
 module IsItFriday
   extend Jukebox

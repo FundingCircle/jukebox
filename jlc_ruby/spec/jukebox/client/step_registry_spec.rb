@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'rspec'
-require_relative '../../../lib/jukebox/client/step_registry'
+require 'jukebox/client/step_registry'
 
 step_registry = Jukebox::Client::StepRegistry
 
@@ -9,7 +9,7 @@ describe Jukebox::Client::StepRegistry do
   context 'a step definition is added to the step registry' do
     before :all do
       @trigger = SecureRandom.uuid
-      @test_callback = proc { |board, arg1| board.merge(arg1: arg1)}
+      @test_callback = proc { |board, arg1| board.merge(arg1: arg1) }
       step_registry.add @trigger, tags: '@foo', &@test_callback
 
       @definition = step_registry.find_trigger(@trigger)

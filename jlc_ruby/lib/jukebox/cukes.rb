@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'rspec/expectations'
-require_relative '../jukebox'
+require 'jukebox'
 
 module Jukebox
   # Cucumber-compatibility layer
@@ -45,6 +45,7 @@ module Jukebox
     alias Then Given
     alias And Given
 
+    # Evaluation context for step definitions
     class World
       extend Jukebox::Cukes
     end

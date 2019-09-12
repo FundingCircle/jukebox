@@ -3,8 +3,8 @@
 require 'eventmachine'
 require 'faye/websocket'
 require 'logger'
-require_relative '../../lib/jukebox/client/step_scanner'
-require_relative '../../lib/jukebox/client/step_registry'
+require 'jukebox/client/step_scanner'
+require 'jukebox/client/step_registry'
 require 'json'
 require 'optparse'
 require 'securerandom'
@@ -24,14 +24,6 @@ module Jukebox
     @logger.level = Logger::DEBUG
 
     class << self
-      # Stop the ruby jukebox language client.
-      def stop!
-        return unless @ws
-
-        @ws.close
-        @ws = nil
-      end
-
       # Create an error response message.
       def error(message, exception)
         message.merge(
@@ -49,6 +41,8 @@ module Jukebox
       # Run a step or hook
       def run(message)
         message.merge(action: 'result', board: StepRegistry.run(message))
+      rescue Exception => e
+        error(message, e)
       end
 
       def read_message_data(message_data, local_board)
@@ -67,15 +61,14 @@ module Jukebox
 
       # Handle messages from the coordinator
       def handle_coordinator_message(message)
-        message = message.data
-        message = read_message_data(message, @local_board)
+        message_data = read_message_data(message.data, @local_board)
 
-        case message[:action]
-        when 'run' then @ws.send write_message_data(run(message))
-        else raise UnknownAction, "Unknown action: #{message[:action]}"
+        case message_data[:action]
+        when 'run' then @ws.send write_message_data(run(message_data))
+        else raise UnknownAction, "Unknown action: #{message_data[:action]}"
         end
       rescue Exception => e
-        @ws.send write_message_data(error(message, e))
+        @ws.send write_message_data(error(message.data, e))
       end
 
       def template

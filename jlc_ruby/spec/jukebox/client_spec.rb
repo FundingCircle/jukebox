@@ -4,11 +4,14 @@ require 'rspec'
 require 'active_support/core_ext'
 require 'jukebox/client'
 
+step_registry = Jukebox::Client::StepRegistry
+step_scanner = Jukebox::Client::StepScanner
+
 describe Jukebox::Client do
   context 'jukebox client info' do
     it 'should include step definitions and template snippet' do
-      Jukebox::Client::StepRegistry.clear
-      Jukebox::Client::StepScanner.load_step_definitions!(['spec/glue_paths/jukebox'])
+      step_registry.clear
+      step_scanner.load_step_definitions!(['spec/glue_paths/jukebox'])
       client_id = SecureRandom.uuid
 
       expect(Jukebox::Client.client_info(client_id))
@@ -40,7 +43,8 @@ describe Jukebox::Client do
       local_board = { baz: 'bat' }
       Jukebox::Client.read_message_data(
         JSON[{ 'action': 'run', 'board': { 'foo': 'bar' } }],
-        local_board)
+        local_board
+      )
     end
 
     it { is_expected.to eq(action: 'run', board: { foo: 'bar', baz: 'bat' }) }
@@ -49,8 +53,8 @@ describe Jukebox::Client do
   context 'handling a request to run a step' do
     subject do
       @foo = Unserializable.new
-      Jukebox::Client.write_message_data(action: 'result', board: { foo: @foo,
-                                                                    bar: 'baz' })
+      Jukebox::Client.write_message_data(action: 'result',
+                                         board: { foo: @foo, bar: 'baz' })
     end
 
     it 'writes a result message' do
@@ -77,12 +81,11 @@ describe Jukebox::Client do
   context 'executing a step' do
     subject do
       @trigger = SecureRandom.uuid
-      @test_callback = proc { |board, arg1| board.merge(arg1: arg1)}
-      Jukebox::Client::StepRegistry.clear
-      Jukebox::Client::StepRegistry.add @trigger, tags: '@foo', &@test_callback
+      @test_callback = proc { |board, arg1| board.merge(arg1: arg1) }
+      step_registry.clear
+      step_registry.add @trigger, tags: '@foo', &@test_callback
 
-      @definition = Jukebox::Client::StepRegistry.find_trigger(@trigger)
-      # @callback = Jukebox::Client::StepRegistry.callbacks[@definition[:id]]
+      @definition = step_registry.find_trigger(@trigger)
       Jukebox::Client.run(id: @definition[:id],
                           board: { a: 1 },
                           args: [2])

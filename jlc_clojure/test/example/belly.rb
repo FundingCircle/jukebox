@@ -45,7 +45,6 @@ module ExampleTests
   require 'jukebox/cukes'
   extend Jukebox::Cukes
   Before do |board|
-    p "Before scenario from ruby"
     board
   end
 

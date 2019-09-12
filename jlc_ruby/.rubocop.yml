@@ -1,3 +1,5 @@
+inherit_from: .rubocop_todo.yml
+
 Metrics/BlockLength:
   Exclude:
     - 'spec/**/*'
@@ -13,3 +15,7 @@ Naming/MethodName:
 Lint/RescueException:
   Exclude:
     - 'lib/jukebox/client.rb'
+
+Metrics/MethodLength:
+  Exclude:
+    - 'lib/jukebox/core_ext/hash.rb'

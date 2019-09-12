@@ -56,18 +56,11 @@
     (reset! local-board (:local-board jsonable))
     (s/put! @ws (json/generate-string (:board jsonable)))))
 
-(defn stop
-  "Stop the clojure jukebox language client."
-  []
-  (when @ws
-    (.close @ws)
-    (reset! ws nil)))
-
 (defn error
   "Create an error response message."
   [message e]
   (log/debugf "Step threw exception: %s" e)
-  (.printStackTrace e)
+  (log/debugf "%s" (.getStackTrace e))
   (assoc message
     :action "error"
     :error (.getMessage e)
@@ -96,7 +89,6 @@
       (try
         (case (:action message)
           "run" (send! (run message))
-          "stop" (stop)
           (throw (ex-info (format "Unknown action: %s" message) {})))
         (catch Throwable e (error message e))))             ;; Error handling message
     (catch Throwable e                                      ;; Error parsing message

@@ -14,19 +14,22 @@ module Jukebox
       class << self
         attr_reader :definitions, :callbacks
 
+        def cleanup_opts(opts)
+          opts['scene/tags'] = [opts[:tags]] if opts[:tags].is_a?(String)
+          opts.except!(:tags)
+        end
+
         # Add a step or hook to the step registry.
         def add(*triggers, **opts, &block)
           raise UndefinedError unless block
 
           triggers.map! { |t| t.is_a?(Symbol) ? t.to_s : t.inspect[1..-2] }
-          opts['scene/tags'] = [opts[:tags]] if opts[:tags].is_a?(String)
-          opts = opts.except!(:tags)
 
           id = SecureRandom.uuid
           @definitions << {
             id: id,
             triggers: triggers,
-            opts: opts
+            opts: cleanup_opts(opts)
           }
           @callbacks[id] = block
         end

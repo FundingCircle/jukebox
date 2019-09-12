@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module FridayStepHelper
   def is_it_friday(day); end
 end

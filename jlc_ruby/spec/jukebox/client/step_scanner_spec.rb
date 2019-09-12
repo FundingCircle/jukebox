@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'rspec'
-require_relative '../../../lib/jukebox/client/step_registry'
-require_relative '../../../lib/jukebox/client/scanner'
+require 'jukebox/client/step_registry'
+require 'jukebox/client/step_scanner'
 
 step_registry = Jukebox::Client::StepRegistry
 scanner = Jukebox::Client::StepScanner

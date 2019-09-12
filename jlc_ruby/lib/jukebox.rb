@@ -16,13 +16,6 @@ module Jukebox
       @log.level = Logger::WARN
       @log
     end
-
-    def run_callback(id:, board:, args:, **)
-      callback = Jukebox.callbacks[id]
-      raise UndefinedError, "ID: #{id}: #{board}: #{args}" unless callback
-
-      callback.call(board, *args)
-    end
   end
 
   def step(*triggers, **opts, &block)
