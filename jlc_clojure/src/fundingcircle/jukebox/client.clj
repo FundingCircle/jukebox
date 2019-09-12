@@ -7,7 +7,7 @@
             [clojure.tools.cli :as cli]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox.client.step-registry :as registry]
-            [fundingcircle.jukebox.client.scanner :as scanner]
+            [fundingcircle.jukebox.client.step-scanner :as scanner]
             [clojure.string :as str])
   (:import (java.util UUID))
   (:gen-class))
@@ -15,19 +15,19 @@
 (defonce ws (atom nil))
 (defonce local-board (atom {}))
 
-(defn- ->jsonable
+(defn- ->transmittable
   "Removes non-json-able entries from the map, stashing non-serializable values in `local-board`."
-  ([m] (->jsonable m []))
+  ([m] (->transmittable m []))
   ([m ks]
    (let [local-board (volatile! nil)
-         board (->jsonable m ks local-board)]
+         board (->transmittable m ks local-board)]
      {:board board :local-board @local-board}))
   ([m ks local-board]
    (into {}
     (for [[k v] m]
       (cond
         (map? v)
-        [k (->jsonable v (conj ks k) local-board)]
+        [k (->transmittable v (conj ks k) local-board)]
 
         ;; TODO: vectors
 
@@ -35,12 +35,12 @@
         (try
           (json/generate-string v)
           [k v]
-          (catch Exception _
+          (catch Throwable _
             (log/warnf "Note: Board entry can't be transmitted across languages: %s" [ks v])
             (vswap! local-board assoc (conj ks k) v)
             nil)))))))
 
-(defn- jsonable->
+(defn- transmittable->
   "Parse json & merge with local board"
   [s]
   (reduce (fn [m [ks v]] (assoc-in m ks v))
@@ -52,7 +52,7 @@
   "Send a message to the jukebox coordinator."
   [message]
   (log/debugf "Sending message to coordinator: %s" message)
-  (let [jsonable (->jsonable message)]
+  (let [jsonable (->transmittable message)]
     (reset! local-board (:local-board jsonable))
     (s/put! @ws (json/generate-string (:board jsonable)))))
 
@@ -77,21 +77,29 @@
                           :method-name (.getMethodName t)})
                  (.getStackTrace e))))
 
+(defn run
+  "Runs a step or hook."
+  [message]
+  (try
+    (assoc message
+      :action "result"
+      :board (registry/run message))
+    (catch Throwable e
+      (error message e))))
+
 (defn handle-coordinator-message
   "Handle messages from the coordinator"
   [message]
   (try
     (log/debugf "Coordinator message: %s" message)
-    (let [message (jsonable-> message)]
+    (let [message (transmittable-> message)]
       (try
         (case (:action message)
-          "run" (send! (assoc message
-                         :action "result"
-                         :board (registry/run message)))
+          "run" (send! (run message))
           "stop" (stop)
           (throw (ex-info (format "Unknown action: %s" message) {})))
-        (catch Exception e (error message e))))             ;; Error handling message
-    (catch Exception e                                      ;; Error parsing message
+        (catch Throwable e (error message e))))             ;; Error handling message
+    (catch Throwable e                                      ;; Error parsing message
       (send! (error {} e)))))
 
 (def ^:private template (str
@@ -105,15 +113,16 @@
 
 (defn client-info
   "Client details for this jukebox client."
-  []
-  {"action" "register"
-   "client-id" (str (UUID/randomUUID))
-   "language" "clojure"
-   "version" "1"
-   "definitions" @registry/definitions
-   "snippet" {"argument-joiner" " "
-              "escape-pattern" ["\"" "\\\""]
-              "template" template}})
+  ([] (client-info (str (UUID/randomUUID))))
+  ([client-id]
+   {"action" "register"
+    "client-id" client-id
+    "language" "clojure"
+    "version" "1"
+    "definitions" @registry/definitions
+    "snippet" {"argument-joiner" " "
+               "escape-pattern" ["\"" "\\\""]
+               "template" template}}))
 
 (defn start
   "Start this jukebox language client."

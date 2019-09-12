@@ -45,6 +45,10 @@ module Jukebox
     alias Then Given
     alias And Given
 
+    class World
+      extend Jukebox::Cukes
+    end
+
     class << self
       def load_support_files(path)
         $LOAD_PATH.unshift "./#{path}/support"
@@ -56,7 +60,7 @@ module Jukebox
       def load_step_definitions(path)
         Dir["./#{path}/step_definitions/**/*.rb"].sort.each do |file|
           File.open(file) do |glue|
-            Cukes.instance_eval glue.read, file
+            World.instance_eval glue.read, file
           end
         end
       end

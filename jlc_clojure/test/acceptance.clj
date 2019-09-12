@@ -1,6 +1,6 @@
 (ns acceptance
   (:require [clojure.test :refer [deftest is]])
-  (:import (cucumber.api.cli Main)))
+  (:import (io.cucumber.core.cli Main)))
 
 (defn run-scenarios
   "Runs the tagged scenarios."

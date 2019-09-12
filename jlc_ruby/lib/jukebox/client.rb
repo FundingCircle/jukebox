@@ -3,13 +3,14 @@
 require 'eventmachine'
 require 'faye/websocket'
 require 'logger'
-require_relative '../../lib/jukebox/client/scanner'
+require_relative '../../lib/jukebox/client/step_scanner'
 require_relative '../../lib/jukebox/client/step_registry'
 require 'json'
 require 'optparse'
 require 'securerandom'
 require 'active_support'
 require 'active_support/core_ext'
+require 'jukebox/core_ext/hash'
 
 module Jukebox
   # A jukebox language client for ruby.
@@ -23,50 +24,6 @@ module Jukebox
     @logger.level = Logger::DEBUG
 
     class << self
-      def assoc_in(hash, key_path, value)
-        b = hash
-        key_path.each do |key|
-          b[key] |= {}
-          b = b[key]
-        end
-        b[key] = value
-        hash
-      end
-
-      # Removes non-serializable entries from the map, stashing them
-      # in `local-board`.
-      def to_jsonifiable(board, key_path = [], local_board = {})
-        return board, local_board if board.nil?
-
-        board.each do |key, value|
-          # TODO: arrays
-          if value.is_a?(Hash)
-            board[key] = to_jsonifiable(value, key_path << key, local_board)
-          else
-            begin
-              JSON.generate(value)
-            rescue StandardError
-              @logger.warn("Note: Board entry can't be transmitted across languages: '#{key}'': '#{value}'")
-              assoc_in(local_board, key_path, value)
-              board.except!(key)
-            end
-          end
-        end
-
-        [board, local_board]
-      end
-
-      def from_jsonifiable(board)
-        board&.deep_merge(@local_board)
-      end
-
-      # Send a message to the jukebox coordinator.
-      def send!(message)
-        message[:board], @local_board = to_jsonifiable(message[:board])
-        message.deep_transform_keys! { |k| k.to_s.dasherize }
-        @ws.send(JSON[message])
-      end
-
       # Stop the ruby jukebox language client.
       def stop!
         return unless @ws
@@ -94,37 +51,51 @@ module Jukebox
         message.merge(action: 'result', board: StepRegistry.run(message))
       end
 
+      def read_message_data(message_data, local_board)
+        message = JSON.parse(message_data).deep_symbolize_keys
+        message[:board] = message[:board]&.deep_merge(local_board)
+        message
+      end
+
+      def write_message_data(message_data)
+        board = message_data[:board] || {}
+        board, @local_board = board.transmittable_as(&JSON.method(:generate))
+        message_data[:board] = board
+        message_data.deep_transform_keys! { |k| k.to_s.dasherize }
+        JSON[message_data]
+      end
+
       # Handle messages from the coordinator
       def handle_coordinator_message(message)
-        message = JSON.parse(message.data)
-                      .deep_transform_keys! { |k| k.underscore.to_sym }
-        message[:board] = from_jsonifiable(message[:board])
+        message = message.data
+        message = read_message_data(message, @local_board)
 
         case message[:action]
-        when 'run' then send!(run(message))
-        when 'stop' then stop!
+        when 'run' then @ws.send write_message_data(run(message))
         else raise UnknownAction, "Unknown action: #{message[:action]}"
         end
       rescue Exception => e
-        send!(error(message, e))
+        @ws.send write_message_data(error(message, e))
       end
 
       def template
-        "  require 'jukebox'\n" \
-        "  module 'MyTests'\n" \
-        "    extend Jukebox\n" \
-        "    \n" \
-        "    step ''{1}'' do |{3}|\n" \
-        "      pending! # {4}\n" \
-        "      board # return the updated board\n" \
-        "    end\n" \
-        "  end\n"
+        <<~END_TEMPLATE
+          require 'jukebox'
+          module 'MyTests'
+            extend Jukebox
+
+            step ''{1}'' do |{3}|
+              pending! # {4}
+              board # return the updated board
+            end
+          end
+        END_TEMPLATE
       end
 
       # Client details for this jukebox client
-      def client_info
+      def client_info(client_id = nil)
         { action: 'register',
-          client_id: SecureRandom.uuid,
+          client_id: client_id || SecureRandom.uuid,
           language: 'ruby',
           version: '1',
           definitions: Jukebox::Client::StepRegistry.definitions,
@@ -137,12 +108,12 @@ module Jukebox
 
       # Start this jukebox language client.
       def start(_client_options, port, glue_paths)
-        Jukebox::Client::Scanner.load_step_definitions!(glue_paths)
+        Jukebox::Client::StepScanner.load_step_definitions!(glue_paths)
 
         EM.run do
           @ws = Faye::WebSocket::Client.new("ws://localhost:#{port}/jukebox")
           @ws.on :message, method(:handle_coordinator_message)
-          send!(client_info)
+          @ws.send write_message_data(client_info)
         end
       end
     end

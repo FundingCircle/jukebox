@@ -6,13 +6,16 @@
             <pattern>%logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <logger name="fundingcircle.jukebox.launcher.cli" level="error">
+    <logger name="fundingcircle.jukebox.launcher.cli" level="info">
         <appender-ref ref="STDOUT"/>
     </logger>
-    <logger name="fundingcircle.jukebox.coordinator" level="debug">
+    <logger name="fundingcircle.jukebox.coordinator" level="info">
         <appender-ref ref="STDOUT"/>
     </logger>
-<!--    <logger name="fundingcircle.jukebox.backend.cucumber" level="debug">-->
+    <logger name="fundingcircle.jukebox.backend.cucumber" level="debug">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <!--    <logger name="fundingcircle.jukebox.backend.cucumber" level="debug">-->
 <!--        <appender-ref ref="STDOUT"/>-->
 <!--    </logger>-->
     <root level="error">

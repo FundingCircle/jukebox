@@ -173,7 +173,7 @@
   [[] nil])
 
 (defn -loadGlue [_ ^Glue glue glue-paths]
-  (let [glue-paths glue-paths #_(mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
+  (let [glue-paths (mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
         setup @(step-coordinator/restart glue-paths)]
     (reset! snippets (:snippets setup))
     (doseq [{:keys [id triggers opts]} (:definitions setup)]

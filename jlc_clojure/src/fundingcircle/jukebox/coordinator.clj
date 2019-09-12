@@ -13,7 +13,6 @@
 
 ;; Jukebox language client launchers
 (require 'fundingcircle.jukebox.launcher.clj)
-(require 'fundingcircle.jukebox.launcher.cli)
 
 (defonce client-count (atom 0))
 (defonce client-ids (atom #{}))
@@ -40,10 +39,6 @@
   "Stop step coordinator."
   []
   (when @ws
-    (log/debugf "Stopping jukebox language clients")
-    (doseq [[_ client] @ws]
-      (s/put! client (json/generate-string {"action" "stop"}))
-      (s/close! client))
     (reset! ws nil))
 
   (when @server

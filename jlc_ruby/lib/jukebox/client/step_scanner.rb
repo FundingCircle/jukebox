@@ -1,26 +1,23 @@
 # frozen_string_literal: true
 
-require 'eventmachine'
-require 'faye/websocket'
 require 'logger'
-require 'json'
-require 'optparse'
 
 # Scan the code
 module Jukebox
   module Client
     # Scan paths for ruby step definitions.
-    module Scanner
+    module StepScanner
       @logger = Logger.new(STDOUT)
       @logger.level = Logger::WARN
-      @cuke_keywords = Set[:Given,
+      @cuke_keywords = Set[:After,
+                           :AfterStep,
+                           :And,
+                           :Before,
+                           :BeforeStep,
+                           :Given,
                            :Then,
                            :When,
-                           :And,
-                           :BeforeStep,
-                           :AfterStep,
-                           :Before,
-                           :After]
+                           :World]
 
       class << self
         # Scan for step definitions.

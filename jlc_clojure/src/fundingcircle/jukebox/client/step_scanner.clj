@@ -1,4 +1,4 @@
-(ns fundingcircle.jukebox.client.scanner
+(ns fundingcircle.jukebox.client.step-scanner
   "Scan paths for clojure step definitions."
   (:require [clojure.tools.namespace.find :as find]
             [clojure.java.io :as io]

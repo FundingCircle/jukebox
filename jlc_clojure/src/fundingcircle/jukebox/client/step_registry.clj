@@ -9,7 +9,10 @@
 (defn add
   "Add a step or hook to the step registry."
   [{:keys [triggers opts callback]}]
-  (let [id (str (UUID/randomUUID))]
+  (let [id (str (UUID/randomUUID))
+        tags (:scene/tags opts)
+        tags (if (string? tags) [tags] tags)
+        opts (dissoc (assoc opts :scene/tags tags) :tags)]
     (swap! callbacks assoc id callback)
     (swap! definitions conj {:id id
                              :triggers triggers
@@ -22,3 +25,15 @@
     (when-not callback (throw (ex-info "Undefined callback" {:message message})))
     (log/debugf "Running step %s: %s" id {:board board :args args})
     (apply callback board args)))
+
+
+(defn find-trigger
+  "Finds the step definition for the trigger."
+  [trigger]
+  (first (filter #(some (fn [t] (= trigger t)) (:triggers %)) @definitions)))
+
+(defn clear
+  "Clears the saved steps."
+  []
+  (reset! definitions [])
+  (reset! callbacks {}))

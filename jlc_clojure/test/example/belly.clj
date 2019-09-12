@@ -33,13 +33,15 @@
   [board _scenario]
   board)
 
-(step "I have {int} cukes in my belly"
-  [board number-of-cukes]
-  (helper-fn-a)
-  (helper-fn-b)
-  (helper-fn-d)
-  (helper-fn-e)
-  board)
+(defn i-have-cukes-in-my-belly
+    {:scene/step "I have {int} cukes in my belly"
+     :scene/resources [:kafka/topic "topic-name"]}
+    [board number-of-cukes]
+    (helper-fn-a)
+    (helper-fn-b)
+    (helper-fn-d)
+    (helper-fn-e)
+    board)
 
 (defn i-have-this-table
   {:scene/step "I have this table"}

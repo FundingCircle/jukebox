@@ -6,8 +6,8 @@
   :dependencies [[aleph "0.4.7-alpha5"]
                  [cheshire "5.8.1"]
                  [compojure "1.6.1"]
-                 [io.cucumber/cucumber-core "4.2.2"]
-                 [io.cucumber/cucumber-junit "4.2.2"]
+                 [io.cucumber/cucumber-core "4.7.1"]
+                 [io.cucumber/cucumber-junit "4.7.1"]
                  [me.raynes/conch "0.8.0"]
                  [org.clojure/clojure "1.10.1"]
                  [org.clojure/tools.cli "0.4.2"]
@@ -19,6 +19,11 @@
                                          "--plugin" "json:cucumber.json"
                                          "--plugin" "pretty"
                                          "test/features"]}
-                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]]
-                   :resource-paths ["test"]}}
+                   :source-paths ["src" "junit"]
+                   :dependencies [[ch.qos.logback/logback-classic "1.2.3"]
+                                  [net.mikera/cljunit "0.7.0"]]
+                   :resource-paths ["test"]}
+             :kaocha {:dependencies [[lambdaisland/kaocha "0.0-541"]
+                                     [lambdaisland/kaocha-junit-xml "0.0-70"]]}}
+  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner" "--plugin" "kaocha.plugin/junit-xml" "--junit-xml-file" "junit.xml"]}
   :aot [fundingcircle.jukebox.backend.cucumber])
