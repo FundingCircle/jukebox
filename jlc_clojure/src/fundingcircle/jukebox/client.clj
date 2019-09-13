@@ -21,25 +21,25 @@
   ([m] (->transmittable m []))
   ([m ks]
    (let [local-board (volatile! nil)
-         board (->transmittable m ks local-board)]
+         board       (->transmittable m ks local-board)]
      {:board board :local-board @local-board}))
   ([m ks local-board]
    (into {}
-    (for [[k v] m]
-      (cond
-        (map? v)
-        [k (->transmittable v (conj ks k) local-board)]
+         (for [[k v] m]
+           (cond
+             (map? v)
+             [k (->transmittable v (conj ks k) local-board)]
 
-        ;; TODO: vectors
+             ;; TODO: vectors
 
-        :else
-        (try
-          (json/generate-string v)
-          [k v]
-          (catch Throwable _
-            (log/warnf "Note: Board entry can't be transmitted across languages: %s" [ks v])
-            (vswap! local-board assoc (conj ks k) v)
-            nil)))))))
+             :else
+             (try
+               (json/generate-string v)
+               [k v]
+               (catch Throwable _
+                 (log/warnf "Note: Board entry can't be transmitted across languages: %s" [ks v])
+                 (vswap! local-board assoc (conj ks k) v)
+                 nil)))))))
 
 (defn- transmittable->
   "Parse json & merge with local board"
@@ -73,27 +73,28 @@
 
 (defn run
   "Runs a step or hook."
-  [message]
+  [step-registry message]
   (try
     (assoc message
       :action "result"
-      :board (step-registry/run message))
+      :board (step-registry/run step-registry message))
     (catch Throwable e
       (error message e))))
 
 (defn handle-coordinator-message
   "Handle messages from the coordinator"
-  [message]
-  (try
-    (log/debugf "Coordinator message: %s" message)
-    (let [message (transmittable-> message)]
-      (try
-        (case (:action message)
-          "run" (send! (run message))
-          (throw (ex-info (format "Unknown action: %s" message) {})))
-        (catch Throwable e (error message e))))
-    (catch Throwable e
-      (send! (error {} e)))))
+  [step-registry]
+  (fn [message]
+    (try
+      (log/debugf "Coordinator message: %s" message)
+      (let [message (transmittable-> message)]
+        (try
+          (case (:action message)
+            "run" (send! (run step-registry message))
+            (throw (ex-info (format "Unknown action: %s" message) {})))
+          (catch Throwable e (error message e))))
+      (catch Throwable e
+        (send! (error {} e))))))
 
 (def ^:private template (str
                           "  (defn {2}\n"
@@ -106,13 +107,13 @@
 
 (defn client-info
   "Client details for this jukebox client."
-  ([] (client-info (str (UUID/randomUUID))))
-  ([client-id]
+  ([step-registry] (client-info step-registry (str (UUID/randomUUID))))
+  ([step-registry client-id]
    {"action" "register"
     "client-id" client-id
     "language" "clojure"
-    "definitions" @step-registry/definitions
-    "resources" (resource-scanner/inventory)
+    "definitions" (step-registry/definitions step-registry)
+    "resources" (resource-scanner/inventory step-registry)
     "snippet" {"argument-joiner" " "
                "escape-pattern" ["\"" "\\\""]
                "template" template}}))
@@ -120,11 +121,12 @@
 (defn start
   "Start this jukebox language client."
   [_client-config port glue-paths]
-  (step-scanner/load-step-definitions! glue-paths)
-  (reset! ws @(http/websocket-client (format "ws://localhost:%s/jukebox" port)))
+  (let [step-registry (-> (step-registry/create)
+                          (step-scanner/load-step-definitions glue-paths))]
+    (reset! ws @(http/websocket-client (format "ws://localhost:%s/jukebox" port)))
 
-  (s/consume handle-coordinator-message @ws)
-  (send! (client-info)))
+    (s/consume (handle-coordinator-message step-registry) @ws)
+    (send! (client-info step-registry))))
 
 (def ^:private cli-options
   "Command line options."

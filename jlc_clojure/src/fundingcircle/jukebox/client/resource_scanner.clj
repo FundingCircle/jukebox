@@ -45,7 +45,7 @@
     (when (get m meta-key)
       m)
     #_(when-not (empty? (select-keys m meta-keys))
-      m)))
+        m)))
 
 (defn ignore-exceptions
   [f]
@@ -132,11 +132,11 @@
 
 (defn inventory
   "Returns a map of entry points to inventory manifest for features matching `tags` (see `parse-tags`)."
-  ([] (inventory (vals @step-registry/callbacks)))
-  ([entry-points] (inventory entry-points :scene/resources))
-  ([entry-points tag] (inventory entry-points tag [#".*"]))
-  ([entry-points tag whitelisted-namespaces]
-   (let [call-graph (call-graph (all-ns) entry-points whitelisted-namespaces)]
+  ([step-registry] (inventory step-registry [#".*"] ))
+  ([step-registry whitelisted-namespaces] (inventory step-registry whitelisted-namespaces :scene/resources))
+  ([step-registry whitelisted-namespaces tag]
+   (let [entry-points (step-registry/entry-points step-registry)
+         call-graph   (call-graph (all-ns) entry-points whitelisted-namespaces)]
      (->> (keep (manifest call-graph tag) call-graph)
           (map (fn [[k v]]
                  [k (into #{} (map #(select-keys % [tag]) v))]))

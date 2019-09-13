@@ -7,13 +7,14 @@
   (:import (java.util UUID)))
 
 (require 'example.belly)
+(require 'glue-paths.jukebox.step-definitions.is-it-friday-yet)
 
 (deftest client-info-test
   (testing "the clojure client info should include step definitions and a template snippet"
-    (step-registry/clear)
-    (step-scanner/load-step-definitions! ["test/glue-paths/jukebox"])
-    (let [client-id (str (UUID/randomUUID))]
-      (is (= (client/client-info client-id)
+    (let [step-registry (-> (step-registry/create)
+                            (step-scanner/load-step-definitions ["test/glue-paths/jukebox"]))
+          client-id     (str (UUID/randomUUID))]
+      (is (= (client/client-info step-registry client-id)
              {"action" "register"
               "client-id" client-id
               "definitions" []
@@ -40,15 +41,19 @@
 
 (deftest run-step
   (testing "when a step fails, an error message payload is created"
-    (let [trigger       (str (UUID/randomUUID))
-          test-callback (fn [_board _arg1] (assert false))]
-      (step-registry/clear)
-      (step-registry/add {:triggers [trigger] :tags "@foo" :callback test-callback})
+    (let [
+          trigger       (str (UUID/randomUUID))
+          test-callback (fn [_board _arg1] (assert false))
+          step-registry (-> (step-registry/create)
+                            (step-scanner/load-step-definitions ["test/glue-paths/jukebox"]) ;; TODO
+                            (step-registry/add {:triggers [trigger] :tags "@foo" :callback test-callback})
+                            )
+          ]
 
-      (let [definition (step-registry/find-trigger trigger)
-            result     (client/run {:id (:id definition)
-                                    :board {:a 1 :arg1 2}
-                                    :args [2]})]
+      (let [definition (step-registry/find-trigger step-registry trigger)
+            result     (client/run step-registry {:id (:id definition)
+                                                  :board {:a 1 :arg1 2}
+                                                  :args [2]})]
         (is (= (dissoc result :trace)
                {:action "error"
                 :args [2]

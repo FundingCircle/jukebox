@@ -5,26 +5,26 @@
   (:import (java.util UUID)))
 
 (deftest registry-test
-  (let [triggers [(str (UUID/randomUUID))]
-        test-callback (fn test-callback [board arg1] (assoc board :arg1 arg1))]
-    (step-registry/add {:triggers triggers
-                        :opts {:scene/tags "@foo"}
-                        :callback test-callback})
-    (let [definition (first (filter #(= triggers (:triggers %)) @step-registry/definitions))
-          callback   (get @step-registry/callbacks (:id definition))]
+  (let [trigger      (str (UUID/randomUUID))
+        test-callback (fn test-callback [board arg1] (assoc board :arg1 arg1))
+        step-registry (-> (step-registry/create)
+                          (step-registry/add {:triggers [trigger]
+                                              :opts {:scene/tags "@foo"}
+                                              :callback test-callback}))
+        definition (step-registry/find-trigger step-registry trigger)
+        callback   (get (step-registry/callbacks step-registry) (:id definition))]
+    (testing "it saves the step definition"
+      (is definition)
+      (is (= {:scene/tags ["@foo"]} (:opts definition)))
+      (is (uuid? (UUID/fromString (:id definition))))
+      (is (= [trigger] (:triggers definition))))
 
-      (testing "it saves the step definition"
-        (is definition)
-        (is (= {:scene/tags ["@foo"]} (:opts definition)))
-        (is (uuid? (UUID/fromString (:id definition))))
-        (is (= triggers (:triggers definition))))
+    (testing "it registers the callback"
+      (is callback)
+      (is (= test-callback callback)))
 
-      (testing "it registers the callback"
-        (is callback)
-        (is (= test-callback callback)))
-
-      (testing "it runs the step definition"
-        (is (= {:a 1 :arg1 2}
-               (step-registry/run {:id (:id definition)
-                                   :board {:a 1}
-                                   :args [2]})))))))
+    (testing "it runs the step definition"
+      (is (= {:a 1 :arg1 2}
+             (step-registry/run step-registry {:id (:id definition)
+                                               :board {:a 1}
+                                               :args [2]}))))))

@@ -3,7 +3,7 @@
   (:require [clojure.tools.namespace.find :as find]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [fundingcircle.jukebox.client.step-registry :as registry]))
+            [fundingcircle.jukebox.client.step-registry :as step-registry]))
 
 (defn scene-related?
   "Checks whether a var is tagged with any scene related metadata."
@@ -55,21 +55,23 @@
 
 (defn register-callbacks
   "Registers the given step/hook functions with the backend."
-  [callback-fns]
-  (doseq [callback callback-fns]
-    (let [m        (meta callback)
-          hooks    (map name (keys (select-keys m [:scene/before :scene/after :scene/before-step :scene/after-step])))
-          triggers (into (filter identity (conj (:scene/steps m) (:scene/step m))) hooks)
-          opts     (select-keys m [:scene/tags])]
-      (registry/add {:triggers triggers
-                     :opts opts
-                     :callback callback}))))
+  [step-registry callback-fns]
+  (reduce (fn [step-registry callback]
+            (let [m        (meta callback)
+                  hooks    (map name (keys (select-keys m [:scene/before :scene/after :scene/before-step :scene/after-step])))
+                  triggers (into (filter identity (conj (:scene/steps m) (:scene/step m))) hooks)
+                  opts     (select-keys m [:scene/tags])]
+              (step-registry/add step-registry {:triggers triggers
+                                                :opts opts
+                                                :callback callback})))
+          step-registry callback-fns))
 
-(defn load-step-definitions!
+(defn load-step-definitions
   "Scan for step definitions."
-  [glue-paths]
+  [step-registry glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
   (if (= 0 (count glue-paths))
-    (register-callbacks (hooks))
-    (doseq [glue-path glue-paths]
-      (register-callbacks (hooks glue-path)))))
+    (register-callbacks step-registry (hooks))
+    (reduce (fn [step-registry glue-path]
+              (register-callbacks step-registry (hooks glue-path)))
+            step-registry glue-paths)))
