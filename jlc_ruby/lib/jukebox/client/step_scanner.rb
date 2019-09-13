@@ -23,7 +23,6 @@ module Jukebox
         # Scan for step definitions.
         def load_step_definitions!(glue_paths)
           @logger.debug("Glue paths: #{glue_paths}")
-          require_relative '../cukes'
 
           glue_paths.each do |path|
             Dir["./#{path}/**/*.rb"].each do |file|

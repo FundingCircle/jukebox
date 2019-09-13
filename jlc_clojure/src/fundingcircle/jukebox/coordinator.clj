@@ -38,12 +38,16 @@
 (defn stop
   "Stop step coordinator."
   []
-  (when @ws
-    (reset! ws nil))
-
   (when @server
-    (.close ^Closeable @server)
-    (reset! server nil)))
+    (.close ^Closeable @server))
+  (reset! ws nil)
+  (reset! server nil)
+  (reset! callbacks {})
+  (reset! definitions [])
+  (reset! snippets [])
+  (reset! result-received nil)
+  (reset! client-ids #{})
+  (reset! client-count 0))
 
 (defn drive-step
   "Find a jukebox language client that knows about `step`, and ask for it to be run."
@@ -89,6 +93,7 @@
 (defn register-client-steps
   "Register steps that a jukebox language client knows how to handle."
   [{:keys [client-id language] :as message}]
+  (log/debugf "Registering client steps (%s, %s): %s\n" language client-id message)
   (swap! definitions into (:definitions message))
   (swap! callbacks merge
          (->> (map (fn [{:keys [id]}] [id client-id]) (:definitions message))
@@ -123,10 +128,10 @@
           (register-client-steps message)
           (swap! client-count dec)
           (swap! client-ids conj client-id)
+          (log/debugf "Client count: %s" @client-count)
           (when (= 0 @client-count)
             (d/success! @registration-completed {:definitions @definitions :snippets @snippets})))
         (log/errorf "Didn't get registration message"))
-      #_(handle-client-message socket)
       (s/consume #'handle-client-message socket)
       {:status 202})
 

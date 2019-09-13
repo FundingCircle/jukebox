@@ -12,6 +12,9 @@
     <logger name="fundingcircle.jukebox.coordinator" level="error">
         <appender-ref ref="STDOUT"/>
     </logger>
+    <logger name="fundingcircle.jukebox" level="error">
+        <appender-ref ref="STDOUT"/>
+    </logger>
     <logger name="fundingcircle.jukebox.backend.cucumber" level="error">
         <appender-ref ref="STDOUT"/>
     </logger>

@@ -6,8 +6,9 @@
             [cheshire.core :as json]
             [clojure.tools.cli :as cli]
             [clojure.tools.logging :as log]
-            [fundingcircle.jukebox.client.step-registry :as registry]
-            [fundingcircle.jukebox.client.step-scanner :as scanner]
+            [fundingcircle.jukebox.client.step-registry :as step-registry]
+            [fundingcircle.jukebox.client.step-scanner :as step-scanner]
+            [fundingcircle.jukebox.client.resource-scanner :as resource-scanner]
             [clojure.string :as str])
   (:import (java.util UUID))
   (:gen-class))
@@ -76,7 +77,7 @@
   (try
     (assoc message
       :action "result"
-      :board (registry/run message))
+      :board (step-registry/run message))
     (catch Throwable e
       (error message e))))
 
@@ -110,8 +111,8 @@
    {"action" "register"
     "client-id" client-id
     "language" "clojure"
-    "version" "1"
-    "definitions" @registry/definitions
+    "definitions" @step-registry/definitions
+    "resources" (resource-scanner/inventory)
     "snippet" {"argument-joiner" " "
                "escape-pattern" ["\"" "\\\""]
                "template" template}}))
@@ -119,7 +120,7 @@
 (defn start
   "Start this jukebox language client."
   [_client-config port glue-paths]
-  (scanner/load-step-definitions! glue-paths)
+  (step-scanner/load-step-definitions! glue-paths)
   (reset! ws @(http/websocket-client (format "ws://localhost:%s/jukebox" port)))
 
   (s/consume handle-coordinator-message @ws)
@@ -137,7 +138,7 @@
   (println summary))
 
 (defn -main
-  ""
+  "Launch the clojure jukebox language client from the command line."
   [& args]
   (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
     (cond

@@ -10,6 +10,7 @@
   (assoc board :today "Sunday"))
 
 (step "I ask whether it's Friday yet"
+  {:scene/resources ["foo"]}
   [board]
   (assoc board :actual-answer (is-it-friday? (:today board))))
 

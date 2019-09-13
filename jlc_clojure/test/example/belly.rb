@@ -15,12 +15,12 @@ module ExampleTests
     board
   end
 
-  step 'I should be told {string}' do |board, string|
+  step 'I should be told {string}', {resources: ["kafka/topic-h"]} do |board, _string|
     # Write code here that turns the phrase above into concrete actions
     board
   end
 
-  step 'I wait {int} hour' do |board, hours|
+  step 'I wait {int} hour' do |board, _hours|
     # Write code here that turns the phrase above into concrete actions
     board
   end
@@ -30,7 +30,7 @@ module ExampleTests
     board
   end
 
-  step :before, :after_step, tags: "@tag1 or @tag2", resource: "asdf" do |board|
+  step :before, :after_step, tags: "@tag1 or @tag2" do |board|
     board
   end
 

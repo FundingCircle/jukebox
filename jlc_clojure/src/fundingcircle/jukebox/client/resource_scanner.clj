@@ -4,7 +4,9 @@
             [yagni.graph :as graph]
             [yagni.jvm :as jvm]
             [yagni.namespace :as namesp]
-            [yagni.namespace.form :as form]))
+            [yagni.namespace.form :as form]
+            [fundingcircle.jukebox.client.step-registry :as step-registry]
+            [clojure.tools.logging :as log]))
 
 (defn- flattened-call-graph
   "Given a step definition, returns the set of all functions that are
@@ -38,9 +40,11 @@
 
 (defn- resources
   "If the meta on `v` contains any of the `keys`, returns the meta."
-  [v meta-keys]
+  [v meta-key]
   (let [m (meta (->var v))]
-    (when-not (empty? (select-keys m meta-keys))
+    (when (get m meta-key)
+      m)
+    #_(when-not (empty? (select-keys m meta-keys))
       m)))
 
 (defn ignore-exceptions
@@ -60,23 +64,53 @@
 
 (def ^:private
   blacklisted-namespaces
- [#"clojure.*" #"manifold.*"])
+  "A list of namespaces to skip scanning, to speed things up."
+  [#"acceptance.*"
+   #"aleph.*"
+   #"byte-streams.*"
+   #"camel-snake-kebab"
+   #"cheshire.*"
+   #"clj.*"
+   #"clojure.*"
+   #"clout.*"
+   #"com.amazon.*"
+   #"com.cemerick"
+   #"complete.*"
+   #"compojure.*"
+   #"cursive.*"
+   #"fundingcircle.jukebox.*"
+   #"instaparse.*"
+   #"leiningen.*"
+   #"manifold.*"
+   #"me.raynes.*"
+   #"medley.*"
+   #"nrepl.*"
+   #"orchestra.*"
+   #"potemkin.*"
+   #"potemkin"
+   #"primitive-math"
+   #"riddley.*"
+   #"ring.*"
+   #"user"
+   #"yagni.*"])
 
-(defn- blacklisted-namespace?
+(defn- listed?
   "Predicate matches blacklisted namespaces."
-  [n]
-  (let [n (str n)]
-    (some #(re-matches % n) blacklisted-namespaces)))
+  [namespaces]
+  (fn [n] (some #(re-matches % (str n)) namespaces)))
 
 (defn- call-graph
   "Returns the call graph of every var in each of the namespaces."
-  [namespaces entry-points]
+  [namespaces entry-points whitelisted-namespaces]
   ;; This is the same as `yagni.core/construct-reference-graph`, but
   ;; with a couple of tweaks:
   ;;  - Instead of acting on a directory, it acts on a list of namespaces
   ;;  - `count-vars-in-ns` is overridden (above) to ignore unparsable namespaces
   (let [namespaces    (->> (map ->sym namespaces)
-                           (remove blacklisted-namespace?))
+                           (remove (listed? blacklisted-namespaces))
+                           (filter (listed? whitelisted-namespaces))
+                           (into []))
+        _             (log/debugf "Scanning namespaces: %s" namespaces)
         graph         (atom (namesp/named-vars-map namespaces))
         generator-fns (jvm/find-generator-fns graph)
         entry-points  (map ->var entry-points)]
@@ -88,20 +122,24 @@
 
 (defn- manifest
   "Returns a fn that obtains the inventory 'manifest' for a given var."
-  [call-graph keys]
+  [call-graph key]
   (fn [[f]]
     (when (scanner/scene-related? (->var f))
       (let [fcg (flattened-call-graph f call-graph)]
-        (let [r (resources f keys)]
+        (let [r (resources f key)]
           [f (into (if r #{r} #{})
-                   (keep #(resources % keys) fcg))])))))
+                   (keep #(resources % key) fcg))])))))
 
 (defn inventory
   "Returns a map of entry points to inventory manifest for features matching `tags` (see `parse-tags`)."
-  [entry-points tags]
-  (let [call-graph (call-graph (all-ns) entry-points)]
-    (->> (keep (manifest call-graph tags) call-graph)
-         (map (fn [[k v]]
-                [k (into #{} (map #(select-keys % tags) v))]))
-         (filter (comp seq second) #_(fn [[_ v]] (not= #{} v)))
-         (into {}))))
+  ([] (inventory (vals @step-registry/callbacks)))
+  ([entry-points] (inventory entry-points :scene/resources))
+  ([entry-points tag] (inventory entry-points tag [#".*"]))
+  ([entry-points tag whitelisted-namespaces]
+   (let [call-graph (call-graph (all-ns) entry-points whitelisted-namespaces)]
+     (->> (keep (manifest call-graph tag) call-graph)
+          (map (fn [[k v]]
+                 [k (into #{} (map #(select-keys % [tag]) v))]))
+          (filter (comp seq second))
+          (mapcat (fn [[_ v]] (mapcat tag v)))
+          (into #{})))))

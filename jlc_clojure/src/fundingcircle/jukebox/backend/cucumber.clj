@@ -5,7 +5,8 @@
     :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
     :init init
     :implements [cucumber.runtime.Backend])
-  (:require [clojure.string :as str]
+  (:require [camel-snake-kebab.core :refer [->kebab-case-keyword]]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox.coordinator :as step-coordinator]
             [clojure.string :as string])
@@ -180,11 +181,12 @@
       (doseq [trigger triggers]
         (log/debugf "Registering definition %s" {:id id :trigger trigger :opts opts})
         (try
-         (case trigger
-           "before" (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-           "after" (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-           "before-step" (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-           "after-step" (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+         (case (->kebab-case-keyword trigger)
+           :before (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           :after (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           :before-step (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
+           "after_step" (throw (ex-info "" {}))
+           :after-step (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
            (.addStepDefinition glue (->JukeStepDefinition id trigger step-coordinator/drive-step)))
          (catch cucumber.runtime.DuplicateStepDefinitionException _
            (log/errorf "Duplicate step definition: %s" {:trigger trigger :tags (:tags opts) :id id :glue glue})))))))

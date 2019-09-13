@@ -3,22 +3,22 @@
 
 (defn- helper-fn-a
   "A test helper fn."
-  {:scene/resources [:kafka/topic "topic-name-a"]}
+  {:scene/resources [:kafka/topic-a]}
   [])
 
 (defn- helper-fn-b
   "A test helper fn."
-  {:scene/resources [:kafka/topic "topic-name-b"]}
+  {:scene/resources [:kafka/topic-b]}
   [])
 
 (defn- helper-fn-c
   "A test helper fn."
-  {:scene/resources [:kafka/topic "topic-name-c"]}
+  {:scene/resources [:kafka/topic-c]}
   [])
 
 (defn- helper-fn-d
   "A test helper fn."
-  {:scene/resources [:kafka/topic "topic-name-a"]}
+  {:scene/resources [:kafka/topic-d]}
   []
   (helper-fn-c))
 
@@ -29,13 +29,13 @@
 
 (defn ^:scene/before before-step
   "Called before a scenario."
-  {:scene/resources [:kafka/topic "topic-name-d"]}
+  {:scene/resources [:kafka/topic-d :kafka/topic-f]}
   [board _scenario]
   board)
 
 (defn i-have-cukes-in-my-belly
     {:scene/step "I have {int} cukes in my belly"
-     :scene/resources [:kafka/topic "topic-name"]}
+     :scene/resources [:kafka/topic-e]}
     [board number-of-cukes]
     (helper-fn-a)
     (helper-fn-b)
@@ -43,8 +43,7 @@
     (helper-fn-e)
     board)
 
-(defn i-have-this-table
-  {:scene/step "I have this table"}
+(step "I have this table"
   [board data-table]
   (assoc board :table data-table))
 

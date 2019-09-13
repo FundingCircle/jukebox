@@ -1,7 +1,8 @@
 (ns fundingcircle.jukebox
   "Defines the Jukebox DSL."
-  (:require [fundingcircle.jukebox.client.step-registry :as registry]
-            [clojure.string :as str]))
+  (:require [fundingcircle.jukebox.client.step-registry :as step-registry]
+            [clojure.string :as str])
+  (:import (java.util UUID)))
 
 (def ^:private trigger?
   ""
@@ -11,8 +12,10 @@
   ""
   [trigger]
   (symbol
-    (str/lower-case
-      (str/join "-" (remove str/blank? (str/split trigger #"\W"))))))
+    (if (keyword? trigger)
+      (str (name trigger) "-" (UUID/randomUUID))
+      (str/lower-case
+        (str/join "-" (remove str/blank? (str/split trigger #"\W")))))))
 
 (defmacro step
   "Defines a step.
@@ -26,8 +29,7 @@
     ;; Run before scenarios with tags:
     (step :before {:tags \"@foo or @bar\"}
       [board scenario]
-      board)
-  "
+      board)"
   {:style/indent 1}
   [& triggers-opts-args-body]
   (let [triggers  (take-while trigger? triggers-opts-args-body)
@@ -38,12 +40,8 @@
         body      (drop-while vector? args_body)]
     `(do
        ~@(for [trigger triggers]
-           (if (keyword? trigger)
-             `(registry/add {:triggers ~(vec triggers)
-                             :opts {:scene/tags ~(:tags opts)}
-                             :callback (fn ~args ~@body)})
-             `(defn ~(step-fn-name trigger)
-                ~(cond-> (assoc opts :scene/step trigger) (:tags opts)
-                         (assoc :scene/tags (:tags opts)))
-                ~args
-                ~@body))))))
+           `(defn ~(step-fn-name trigger)
+              ~(cond-> (assoc opts :scene/step trigger) (:tags opts)
+                       (assoc :scene/tags (:tags opts)))
+              ~args
+              ~@body)))))

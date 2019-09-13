@@ -7,12 +7,11 @@
 
 (deftest inventory-test
   (scanner/load-step-definitions! ["test"])
-  (let [entry-points (vals @step-registry/callbacks)]
-    (is (= {'example.belly/i-have-cukes-in-my-belly
-            #{{:scene/resources [:kafka/topic "topic-name"]}
-              {:scene/resources [:kafka/topic "topic-name-a"]}
-              {:scene/resources [:kafka/topic "topic-name-b"]}
-              {:scene/resources [:kafka/topic "topic-name-c"]}}
-            'example.belly/before-step
-            #{{:scene/resources [:kafka/topic "topic-name-d"]}}}
-           (resource-scanner/inventory entry-points [:scene/resources :resources])))))
+  (is (= #{"foo"
+           :kafka/topic-a
+           :kafka/topic-b
+           :kafka/topic-c
+           :kafka/topic-d
+           :kafka/topic-e
+           :kafka/topic-f}
+         (resource-scanner/inventory [#"example\.belly"]))))

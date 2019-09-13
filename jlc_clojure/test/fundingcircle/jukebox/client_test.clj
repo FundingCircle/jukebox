@@ -6,6 +6,8 @@
             [fundingcircle.jukebox.client.step-registry :as step-registry])
   (:import (java.util UUID)))
 
+(require 'example.belly)
+
 (deftest client-info-test
   (testing "the clojure client info should include step definitions and a template snippet"
     (step-registry/clear)
@@ -16,6 +18,14 @@
               "client-id" client-id
               "definitions" []
               "language" "clojure"
+              "resources"
+              #{"foo"
+                :kafka/topic-a
+                :kafka/topic-b
+                :kafka/topic-c
+                :kafka/topic-d
+                :kafka/topic-e
+                :kafka/topic-f}
               "snippet" {"argument-joiner" " "
                          "escape-pattern" ["\""
                                            "\\\""]
@@ -26,13 +36,12 @@
                                       "    [{3}]\n"
                                       "    ;; {4}\n"
                                       "    (throw (cucumber.api.PendingException.))\n"
-                                      "    board) ;; Return the board\n")}
-              "version" "1"})))))
+                                      "    board) ;; Return the board\n")}})))))
 
 (deftest run-step
   (testing "when a step fails, an error message payload is created"
     (let [trigger       (str (UUID/randomUUID))
-          test-callback (fn [board arg1] (assert false))]
+          test-callback (fn [_board _arg1] (assert false))]
       (step-registry/clear)
       (step-registry/add {:triggers [trigger] :tags "@foo" :callback test-callback})
 
