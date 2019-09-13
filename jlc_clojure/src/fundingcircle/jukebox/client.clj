@@ -91,8 +91,8 @@
         (case (:action message)
           "run" (send! (run message))
           (throw (ex-info (format "Unknown action: %s" message) {})))
-        (catch Throwable e (error message e))))             ;; Error handling message
-    (catch Throwable e                                      ;; Error parsing message
+        (catch Throwable e (error message e))))
+    (catch Throwable e
       (send! (error {} e)))))
 
 (def ^:private template (str

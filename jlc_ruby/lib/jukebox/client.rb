@@ -72,17 +72,15 @@ module Jukebox
       end
 
       def template
-        <<~END_TEMPLATE
-          require 'jukebox'
-          module 'MyTests'
-            extend Jukebox
-
-            step ''{1}'' do |{3}|
-              pending! # {4}
-              board # return the updated board
-            end
-          end
-        END_TEMPLATE
+        "  require 'jukebox'\n" \
+        "  module 'MyTests'\n" \
+        "    extend Jukebox\n" \
+        "\n" \
+        "    step ''{1}'' do |{3}|\n" \
+        "      pending! # {4}\n" \
+        "      board # return the updated board\n" \
+        "    end\n" \
+        "  end\n"
       end
 
       # Client details for this jukebox client
@@ -90,7 +88,6 @@ module Jukebox
         { action: 'register',
           client_id: client_id || SecureRandom.uuid,
           language: 'ruby',
-          version: '1',
           definitions: Jukebox::Client::StepRegistry.definitions,
           snippet: {
             argument_joiner: ', ',

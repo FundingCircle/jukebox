@@ -26,4 +26,3 @@
                  {:triggers ["before"], :opts #:scene{:tags [""]}}
                  {:triggers ["a ruby step that fails"], :opts {}}])
          (count (map #(dissoc % :id) @coordinator/definitions)))))
-
