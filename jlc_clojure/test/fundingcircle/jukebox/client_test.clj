@@ -15,11 +15,11 @@
                             (step-scanner/load-step-definitions ["test/glue-paths/jukebox"]))
           client-id     (str (UUID/randomUUID))]
       (is (= (client/client-info step-registry client-id)
-             {"action" "register"
-              "client-id" client-id
-              "definitions" []
-              "language" "clojure"
-              "resources"
+             {:action "register"
+              :client-id client-id
+              :definitions []
+              :language "clojure"
+              :resources
               #{"foo"
                 :kafka/topic-a
                 :kafka/topic-b
@@ -27,7 +27,7 @@
                 :kafka/topic-d
                 :kafka/topic-e
                 :kafka/topic-f}
-              "snippet" {"argument-joiner" " "
+              :snippet {"argument-joiner" " "
                          "escape-pattern" ["\""
                                            "\\\""]
                          "template" (str

@@ -82,4 +82,5 @@ tagging it with `:scene/before-step` or `:scene/after-step`:
 
 (defmethod launch "jlc-clj-embedded"
   [client-config port glue-paths]
-  (client/start client-config port glue-paths))
+  (future
+    (client/start client-config port glue-paths)))

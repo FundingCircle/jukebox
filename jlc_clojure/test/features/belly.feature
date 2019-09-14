@@ -14,7 +14,7 @@ Feature: Belly
       | 1.2  | yeah |
     Then the datafied table should be
     """
-    ({:col1 1, :col2 "2"} {:col1 1.2M, :col2 "yeah"})
+    ({:col1 1, :col2 "2"} {:col1 1.2, :col2 "yeah"})
     """
 
   @failure-in-ruby

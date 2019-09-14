@@ -6,6 +6,7 @@
   :dependencies [[aleph "0.4.7-alpha5"]
                  [camel-snake-kebab "0.4.0"]
                  [cheshire "5.8.1"]
+                 [clojure-msgpack "1.2.1"]
                  [compojure "1.6.1"]
                  [io.cucumber/cucumber-core "4.7.1"]
                  [io.cucumber/cucumber-junit "4.7.1"]

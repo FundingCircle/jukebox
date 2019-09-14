@@ -1,10 +1,10 @@
 (ns fundingcircle.jukebox.coordinator-test
   (:require [clojure.test :refer [deftest is testing]]
-            [fundingcircle.jukebox.coordinator :as coordinator]))
+            [fundingcircle.jukebox.coordinator :as coordinator]
+            [clojure.tools.logging :as log]))
 
 (deftest start-test
   @(coordinator/restart ["test/example"])
-
   (is (= #{{:triggers ["before"], :opts #:scene{:tags ["@foo or @bar"]}}
            {:triggers ["the datafied table should be"], :opts #:scene{:tags nil}}
            {:triggers ["I have this table"], :opts #:scene{:tags nil}}
