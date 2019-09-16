@@ -5,12 +5,10 @@
     :constructors {[cucumber.runtime.io.ResourceLoader io.cucumber.stepexpression.TypeRegistry] []}
     :init init
     :implements [cucumber.runtime.Backend])
-  (:require [camel-snake-kebab.core :refer [->kebab-case-keyword]]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.edn :as edn]
-            [fundingcircle.jukebox.coordinator :as step-coordinator]
-            [clojure.string :as string])
+            [fundingcircle.jukebox.coordinator :as step-coordinator])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator Concatenator Snippet]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
            [io.cucumber.stepexpression ExpressionArgumentMatcher StepExpressionFactory TypeRegistry]
@@ -52,7 +50,7 @@
     (re-matches #"^\d+" string) (edn/read-string string)
     (re-matches #"^:.*|\d+(\.\d+)" string) (edn/read-string string)
     (re-matches #"^\s*nil\s*$" string) nil
-    :else (string/replace string #"\"" "")))
+    :else (str/replace string #"\"" "")))
 
 (defn table->rows
   "Reads a cucumber table of the form

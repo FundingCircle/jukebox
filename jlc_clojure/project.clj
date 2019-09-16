@@ -3,9 +3,7 @@
   :url "https://github.com/fundingcircle/jukebox/"
   :license {:name "BSD 3-clause"
             :url "http://opensource.org/licenses/BSD-3-Clause"}
-  :dependencies [[aleph "0.4.7-alpha5"]
-                 [camel-snake-kebab "0.4.0"]
-                 [cheshire "5.8.1"]
+  :dependencies [[cheshire "5.8.1"]
                  [clojure-msgpack "1.2.1"]
                  [compojure "1.6.1"]
                  [io.cucumber/cucumber-core "4.7.1"]
@@ -24,8 +22,5 @@
                    :source-paths ["src" "junit"]
                    :dependencies [[ch.qos.logback/logback-classic "1.2.3"]
                                   [net.mikera/cljunit "0.7.0"]]
-                   :resource-paths ["test"]}
-             :kaocha {:dependencies [[lambdaisland/kaocha "0.0-541"]
-                                     [lambdaisland/kaocha-junit-xml "0.0-70"]]}}
-  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner" "--plugin" "kaocha.plugin/junit-xml" "--junit-xml-file" "junit.xml"]}
+                   :resource-paths ["test"]}}
   :aot [fundingcircle.jukebox.backend.cucumber])

@@ -1,11 +1,11 @@
 (ns fundingcircle.jukebox.client
   "A jukebox language client for clojure."
-  (:require [clojure.tools.cli :as cli]
-            [clojure.tools.logging :as log]
+  (:require [clojure.string :as str]
+            [clojure.tools.cli :as cli]
             [fundingcircle.jukebox.client.resource-scanner :as resource-scanner]
             [fundingcircle.jukebox.client.step-registry :as step-registry]
             [fundingcircle.jukebox.client.step-scanner :as step-scanner]
-            [fundingcircle.jukebox.msg :as msg][clojure.string :as str])
+            [fundingcircle.jukebox.msg :as msg])
   (:import (java.util UUID)
            (java.net Socket)
            (java.io DataOutputStream DataInputStream))
@@ -14,9 +14,6 @@
 (defn error
   "Returns an error response message."
   [message e]
-  (log/debugf "Step threw exception: %s" e)
-  (log/debugf "%s" (.getStackTrace e))
-  (.printStackTrace e)
   (assoc message
     :action :error
     :error (.getMessage e)
@@ -36,14 +33,15 @@
     (catch Throwable e
       (error message e))))
 
-(def ^:private template (str
-                          "  (defn {2}\n"
-                          "    \"Returns an updated context (`board`).\"\n"
-                          "    '{':scene/step \"{1}\"'}'\n"
-                          "    [{3}]\n"
-                          "    ;; {4}\n"
-                          "    (throw (cucumber.api.PendingException.))\n"
-                          "    board) ;; Return the board\n"))
+(def ^:private template
+  (str
+    "  (defn {2}\n"
+    "    \"Returns an updated context (`board`).\"\n"
+    "    '{':scene/step \"{1}\"'}'\n"
+    "    [{3}]\n"
+    "    ;; {4}\n"
+    "    (throw (cucumber.api.PendingException.))\n"
+    "    board) ;; Return the board\n"))
 
 (defn create
   "Creates a clojure jukebox language client."
@@ -56,7 +54,7 @@
 
 (defn client-info
   "Client details for this jukebox client."
-  [{:keys [step-registry client-id] :as client}]
+  [{:keys [step-registry client-id]}]
   {:action :register
    :client-id client-id
    :language "clojure"

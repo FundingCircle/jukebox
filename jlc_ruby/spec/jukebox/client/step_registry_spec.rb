@@ -3,17 +3,17 @@
 require 'rspec'
 require 'jukebox/client/step_registry'
 
-StepRegistry = Jukebox::Client::StepRegistry
-
 describe Jukebox::Client::StepRegistry do
   context 'a step definition is added to the step registry' do
+    step_registry = Jukebox::Client::StepRegistry
+
     before :all do
       @trigger = SecureRandom.uuid
       @test_callback = proc { |board, arg1| board.merge(arg1: arg1) }
-      StepRegistry.instance.add @trigger, tags: '@foo', &@test_callback
+      step_registry.instance.add @trigger, tags: '@foo', &@test_callback
 
-      @definition = StepRegistry.instance.find_trigger(@trigger)
-      @callback = StepRegistry.instance.callbacks[@definition[:id]]
+      @definition = step_registry.instance.find_definition(@trigger)
+      @callback = step_registry.instance.callbacks[@definition[:id]]
     end
 
     it 'saves the step definition' do
@@ -29,9 +29,9 @@ describe Jukebox::Client::StepRegistry do
     end
 
     it 'runs the step definition' do
-      board = StepRegistry.instance.run(id: @definition[:id],
-                                        board: { a: 1 },
-                                        args: [2])
+      board = step_registry.instance.run(id: @definition[:id],
+                                         board: { a: 1 },
+                                         args: [2])
       expect(board).to eq(a: 1, arg1: 2)
     end
   end

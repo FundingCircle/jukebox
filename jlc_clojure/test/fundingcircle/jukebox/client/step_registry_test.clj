@@ -11,7 +11,7 @@
                           (step-registry/add {:triggers [trigger]
                                               :opts {:scene/tags "@foo"}
                                               :callback test-callback}))
-        definition (step-registry/find-trigger step-registry trigger)
+        definition (step-registry/find-definition step-registry trigger)
         callback   (get (step-registry/callbacks step-registry) (:id definition))]
     (testing "it saves the step definition"
       (is definition)

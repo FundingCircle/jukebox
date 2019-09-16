@@ -4,7 +4,6 @@
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox.launcher :as step-client]
             [fundingcircle.jukebox.launcher.auto :as auto]
-            [manifold.deferred :as d]
             [msgpack.core :as msg]
             [clojure.string :as str])
   (:import (java.io Closeable DataOutputStream DataInputStream)
@@ -52,7 +51,7 @@
   [id board args]
   (if-let [client-id (get @callbacks id)]
     (do
-      (reset! result-received (d/deferred))
+      (reset! result-received (promise))
       (send! client-id {:action :run
                         :id id
                         :board board
@@ -87,8 +86,8 @@
   [message]
   (log/debugf "Handling message from client: %s" message)
   (case (:action message)
-    :result (d/success! @result-received message)
-    :error (d/success! @result-received message)
+    :result (deliver @result-received message)
+    :error (deliver @result-received message)
     (do
       (log/errorf "Don't know how to handle client message: %s" message)
       (stop))))
@@ -122,7 +121,7 @@
               (swap! client-count dec)
               (swap! client-ids conj client-id)
               (when (= 0 @client-count)
-                (d/success! @registration-completed {:definitions @definitions :snippets @snippets}))
+                (deliver @registration-completed {:definitions @definitions :snippets @snippets}))
               (loop [message (msg/unpack-stream in)]
                 (handle-client-message message)
                 (recur (msg/unpack-stream in)))))
@@ -134,7 +133,7 @@
   [glue-paths]
   (when-not @server
     (let [client-configs   (or (language-client-configs) (auto/detect))
-          steps-registered (d/deferred)
+          steps-registered (promise)
           s                (ServerSocket. 0)
           port             (.getLocalPort s)]
       (reset! server s)

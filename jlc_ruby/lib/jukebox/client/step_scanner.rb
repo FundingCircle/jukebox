@@ -5,7 +5,7 @@ require 'logger'
 # Scan the code
 module Jukebox
   class Client
-    # Scan paths for ruby step definitions.
+    # Scanner for ruby step definitions.
     module StepScanner
       @logger = Logger.new(STDOUT)
       @logger.level = Logger::WARN
@@ -20,7 +20,7 @@ module Jukebox
                            :World]
 
       class << self
-        # Scan for step definitions.
+        # Scans for step definitions.
         def scan(glue_paths)
           @logger.debug("Glue paths: #{glue_paths}")
 

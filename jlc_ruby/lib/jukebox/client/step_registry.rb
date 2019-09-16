@@ -43,24 +43,15 @@ module Jukebox
         callback.call(board, *args)
       end
 
-      def find_trigger(trigger)
+      def find_definition(trigger)
         @definitions.find { |d| d[:triggers].include? trigger }
       end
 
-      def clear
-        @definitions = []
-        @callbacks = {}
-        @resources = Set[]
-      end
-
-      class << self
-
-        def cleanup_opts(opts)
-          opts['scene/tags'.to_sym] = [opts[:tags]] if opts[:tags].is_a?(String)
-          opts['scene/resources'.to_sym] = opts[:resources] if opts[:resources]
-          opts.except!(:tags, :resources)
-        end
-
+      # Normalizes a step's options
+      def self.cleanup_opts(opts)
+        opts['scene/tags'.to_sym] = [opts[:tags]] if opts[:tags].is_a?(String)
+        opts['scene/resources'.to_sym] = opts[:resources] if opts[:resources]
+        opts.except!(:tags, :resources)
       end
     end
   end

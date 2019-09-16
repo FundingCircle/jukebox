@@ -7,7 +7,7 @@
 (require 'fundingcircle.jukebox.launcher.clj)
 
 (defn detect
-  "Detect what languages the current project uses, and return launch configs."
+  "Detects what languages the current project uses, and return launch configs."
   []
   (let [clojure?  (or (.exists (io/file "deps.edn"))
                       (.exists (io/file "project.clj")))

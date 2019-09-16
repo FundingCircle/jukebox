@@ -4,7 +4,8 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [msgpack.core :as msg]
-            [msgpack.macros :refer [extend-msgpack]]))
+            [msgpack.macros :refer [extend-msgpack]])
+  (:import (java.util UUID)))
 
 (defn- keyword->str
   "Convert keyword to string with namespace preserved.
@@ -26,6 +27,12 @@
   1
   [s] (msg/pack (seq s))
   [bytes] (set (msg/unpack bytes)))
+
+(extend-msgpack
+  UUID
+  2
+  [uuid] (msg/pack (str uuid))
+  [bytes] (UUID/fromString (msg/unpack bytes)))
 
 (defonce local-board (atom {}))
 
@@ -55,7 +62,7 @@
                (msg/pack v)
                [k v]
                (catch Throwable _
-                 (log/warnf "Note: Board entry can't be transmitted across languages: %s" [ks v])
+                 (log/warnf "Note: Board entry can't be transmitted across languages: %s" [(conj ks k) v])
                  (vswap! local-board assoc (conj ks k) v)
                  nil)))))))
 

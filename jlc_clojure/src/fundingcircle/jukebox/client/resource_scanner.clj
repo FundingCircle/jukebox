@@ -135,7 +135,7 @@
   ([step-registry] (inventory step-registry [#".*"] ))
   ([step-registry whitelisted-namespaces] (inventory step-registry whitelisted-namespaces :scene/resources))
   ([step-registry whitelisted-namespaces tag]
-   (let [entry-points (step-registry/entry-points step-registry)
+   (let [entry-points (vals (step-registry/callbacks step-registry))
          call-graph   (call-graph (all-ns) entry-points whitelisted-namespaces)]
      (->> (keep (manifest call-graph tag) call-graph)
           (map (fn [[k v]]

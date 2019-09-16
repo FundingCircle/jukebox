@@ -18,11 +18,6 @@
   [step-registry]
   (:callbacks step-registry))
 
-(defn entry-points
-  "The list of entry point functions."
-  [step-registry]
-  (vals (callbacks step-registry)))
-
 (defn add
   "Add a step or hook to the step registry."
   [step-registry {:keys [triggers opts callback]}]
@@ -39,11 +34,13 @@
   [step-registry {:keys [id board args] :as message}]
   (let [callback (get-in step-registry [:callbacks id])]
     (when-not callback (throw (ex-info "Undefined callback" {:message message})))
-    (log/debugf "Running step %s: %s" id {:board board :args args})
     (apply callback board args)))
 
 
-(defn find-trigger
+(defn find-definition
   "Finds the step definition for the trigger."
   [step-registry trigger]
-  (first (filter #(some (fn [t] (= trigger t)) (:triggers %)) (:definitions step-registry))))
+  (first
+    (filter
+      #(some (fn [t] (= trigger t)) (:triggers %))
+      (:definitions step-registry))))

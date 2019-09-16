@@ -50,7 +50,7 @@
                             )
           ]
 
-      (let [definition (step-registry/find-trigger step-registry trigger)
+      (let [definition (step-registry/find-definition step-registry trigger)
             result     (client/run step-registry {:id (:id definition)
                                                   :board {:a 1 :arg1 2}
                                                   :args [2]})]

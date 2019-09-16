@@ -4,19 +4,19 @@ require 'rspec'
 require 'active_support/core_ext'
 require 'jukebox/client'
 
-step_registry = Jukebox::Client::StepRegistry
-
 describe Jukebox::Client do
+  step_registry = Jukebox::Client::StepRegistry
+
   context 'jukebox client info' do
+
     it 'should include step definitions and template snippet' do
-      step_registry.instance.clear
       client_id = SecureRandom.uuid
 
       expect(Jukebox::Client.new(['spec/glue_paths/jukebox'], client_id).client_info)
         .to eq(action: :register,
                client_id: client_id,
                language: 'ruby',
-               definitions: Jukebox::Client::StepRegistry.instance.definitions,
+               definitions: step_registry.instance.definitions,
                snippet: {
                  argument_joiner: ', ',
                  escape_pattern: %w['\'' '\\\''],
@@ -51,10 +51,9 @@ describe Jukebox::Client do
     subject do
       @trigger = SecureRandom.uuid
       @test_callback = proc { |board, arg1| board.merge(arg1: arg1) }
-      step_registry.instance.clear
       step_registry.instance.add @trigger, tags: '@foo', &@test_callback
 
-      @definition = step_registry.instance.find_trigger(@trigger)
+      @definition = step_registry.instance.find_definition(@trigger)
       Jukebox::Client.run(id: @definition[:id],
                           board: { a: 1 },
                           args: [2])

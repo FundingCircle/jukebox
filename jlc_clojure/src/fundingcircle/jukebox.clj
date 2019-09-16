@@ -5,11 +5,11 @@
   (:import (java.util UUID)))
 
 (def ^:private trigger?
-  ""
+  "Checks whether a value is a string or keyword."
   (some-fn keyword? string?))
 
-(defn step-fn-name
-  ""
+(defn- step-fn-name
+  "Returns a name for a step."
   [trigger]
   (symbol
     (if (keyword? trigger)
