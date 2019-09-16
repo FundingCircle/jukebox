@@ -67,7 +67,7 @@ module Jukebox
       end
 
       # Scan for cucumber-style step definitions
-      def load_step_definitions!(glue_paths)
+      def scan(glue_paths)
         glue_paths.each do |path|
           load_support_files(path)
           load_step_definitions(path)

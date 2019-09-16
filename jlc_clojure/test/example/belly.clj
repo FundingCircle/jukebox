@@ -29,7 +29,8 @@
 
 (defn ^:scene/before before-step
   "Called before a scenario."
-  {:scene/resources [:kafka/topic-d :kafka/topic-f]}
+  {:scene/resources [:kafka/topic-d :kafka/topic-f]
+   :scene/tags "@bat"}
   [board _scenario]
   board)
 
@@ -48,11 +49,11 @@
   (assoc board :table data-table))
 
 (defn ^:scene/after to-run-after-scenario
-  {:scene/tags "@baz"}
+  {:scene/tags "@qux"}
   [board _scenario]
   board)
 
-(step :before {:tags "@foo or @bar"}
+(step :before {:tags "@foo or @bar and @clj"}
   [board scenario]
   board)
 

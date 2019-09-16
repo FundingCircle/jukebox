@@ -11,11 +11,10 @@
 
 (deftest client-info-test
   (testing "the clojure client info should include step definitions and a template snippet"
-    (let [step-registry (-> (step-registry/create)
-                            (step-scanner/load-step-definitions ["test/glue-paths/jukebox"]))
-          client-id     (str (UUID/randomUUID))]
-      (is (= (client/client-info step-registry client-id)
-             {:action "register"
+    (let [client-id (str (UUID/randomUUID))
+          client    (client/create ["test/glue-paths/jukebox"] client-id)]
+      (is (= (client/client-info client)
+             {:action :register
               :client-id client-id
               :definitions []
               :language "clojure"
@@ -27,17 +26,18 @@
                 :kafka/topic-d
                 :kafka/topic-e
                 :kafka/topic-f}
-              :snippet {"argument-joiner" " "
-                         "escape-pattern" ["\""
-                                           "\\\""]
-                         "template" (str
-                                      "  (defn {2}\n"
-                                      "    \"Returns an updated context (`board`).\"\n"
-                                      "    '{':scene/step \"{1}\"'}'\n"
-                                      "    [{3}]\n"
-                                      "    ;; {4}\n"
-                                      "    (throw (cucumber.api.PendingException.))\n"
-                                      "    board) ;; Return the board\n")}})))))
+              :snippet {:argument-joiner " "
+                        :escape-pattern ["\""
+                                         "\\\""]
+                        :template (str
+                                    "  (defn {2}\n"
+                                    "    \"Returns an updated context (`board`).\"\n"
+                                    "    '{':scene/step \"{1}\"'}'\n"
+                                    "    [{3}]\n"
+                                    "    ;; {4}\n"
+                                    "    (throw (cucumber.api.PendingException.))\n"
+                                    "    board) ;; Return the board\n")}})))))
+
 
 (deftest run-step
   (testing "when a step fails, an error message payload is created"
@@ -45,7 +45,7 @@
           trigger       (str (UUID/randomUUID))
           test-callback (fn [_board _arg1] (assert false))
           step-registry (-> (step-registry/create)
-                            (step-scanner/load-step-definitions ["test/glue-paths/jukebox"]) ;; TODO
+                            (step-scanner/scan ["test/glue-paths/jukebox"]) ;; TODO
                             (step-registry/add {:triggers [trigger] :tags "@foo" :callback test-callback})
                             )
           ]
@@ -55,7 +55,7 @@
                                                   :board {:a 1 :arg1 2}
                                                   :args [2]})]
         (is (= (dissoc result :trace)
-               {:action "error"
+               {:action :error
                 :args [2]
                 :board {:a 1 :arg1 2}
                 :error "Assert failed: false"

@@ -1,33 +1,30 @@
 # frozen_string_literal: true
 
-require 'eventmachine'
-require 'faye/websocket'
-require 'logger'
-require 'jukebox/client/step_scanner'
-require 'jukebox/client/step_registry'
-require 'json'
-require 'optparse'
-require 'securerandom'
 require 'active_support'
 require 'active_support/core_ext'
+require 'jukebox/client/step_registry'
+require 'jukebox/client/step_scanner'
 require 'jukebox/core_ext/hash'
+require 'jukebox/msg'
+require 'logger'
+require 'msgpack'
+require 'optparse'
+require 'securerandom'
+require 'socket'
 
 module Jukebox
   # A jukebox language client for ruby.
-  module Client
-    class UnknownAction < StandardError
-    end
-
-    @ws = nil
+  class Client
     @local_board = {}
     @logger = Logger.new(STDOUT)
     @logger.level = Logger::DEBUG
+    $stdout.sync = true
 
     class << self
-      # Create an error response message.
+      # Returns an error response message.
       def error(message, exception)
         message.merge(
-          action: 'error',
+          action: :error,
           message: exception.message,
           trace: exception.backtrace_locations&.map do |location|
             { class_name: location.label,
@@ -38,37 +35,13 @@ module Jukebox
         )
       end
 
-      # Run a step or hook
+      # Runs a step or hook, returning a result or error response.
       def run(message)
-        message.merge(action: 'result', board: StepRegistry.run(message))
+        @logger.debug("Running: #{message}")
+        message.merge!(action: :result, board: StepRegistry.instance.run(message))
+        message
       rescue Exception => e
         error(message, e)
-      end
-
-      def read_message_data(message_data, local_board)
-        message = JSON.parse(message_data).deep_symbolize_keys
-        message[:board] = message[:board]&.deep_merge(local_board)
-        message
-      end
-
-      def write_message_data(message_data)
-        board = message_data[:board] || {}
-        board, @local_board = board.transmittable_as(&JSON.method(:generate))
-        message_data[:board] = board
-        message_data.deep_transform_keys! { |k| k.to_s.dasherize }
-        JSON[message_data]
-      end
-
-      # Handle messages from the coordinator
-      def handle_coordinator_message(message)
-        message_data = read_message_data(message.data, @local_board)
-
-        case message_data[:action]
-        when 'run' then @ws.send write_message_data(run(message_data))
-        else raise UnknownAction, "Unknown action: #{message_data[:action]}"
-        end
-      rescue Exception => e
-        @ws.send write_message_data(error(message.data, e))
       end
 
       def template
@@ -83,28 +56,52 @@ module Jukebox
         "  end\n"
       end
 
-      # Client details for this jukebox client
-      def client_info(client_id = nil)
-        { action: 'register',
-          client_id: client_id || SecureRandom.uuid,
-          language: 'ruby',
-          definitions: Jukebox::Client::StepRegistry.definitions,
-          snippet: {
-            argument_joiner: ', ',
-            escape_pattern: %w['\'' '\\\''],
-            template: template
-          } }
-      end
-
       # Start this jukebox language client.
       def start(_client_options, port, glue_paths)
-        Jukebox::Client::StepScanner.load_step_definitions!(glue_paths)
+        client = Client.new(glue_paths).connect(port)
+        @logger.debug("Connected: #{client}")
+        Thread.new { client.handle_coordinator_messages }.join
+      end
+    end
 
-        EM.run do
-          @ws = Faye::WebSocket::Client.new("ws://localhost:#{port}/jukebox")
-          @ws.on :message, method(:handle_coordinator_message)
-          @ws.send write_message_data(client_info)
+    # Creates a ruby jukebox language client.
+    def initialize(glue_paths, client_id = nil)
+      @client_id = client_id || SecureRandom.uuid
+
+      Jukebox::Client::StepScanner.scan(glue_paths)
+      @step_registry = nil
+      @definitions = Jukebox::Client::StepRegistry.instance.definitions
+    end
+
+    # Client details for this jukebox client
+    def client_info
+      { action: :register,
+        client_id: @client_id,
+        language: 'ruby',
+        definitions: @definitions,
+        snippet: {
+          argument_joiner: ', ',
+          escape_pattern: %w['\'' '\\\''],
+          template: Client.template
+        } }
+    end
+
+    # Connects to the jukebox coordinator and registers known step definitions.
+    def connect(port)
+      @socket = TCPSocket.open('localhost', port)
+      send(client_info)
+      self
+    end
+
+    # Handles messages from the coordinator
+    def handle_coordinator_messages
+      messages.each do |message|
+        case message[:action]
+        when :run then send(Client.run(message))
+        else raise "Unknown action: #{message[:action]}"
         end
+      rescue Exception => e
+        send(Client.error(message, e))
       end
     end
   end

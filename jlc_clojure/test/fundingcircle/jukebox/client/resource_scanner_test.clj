@@ -10,7 +10,7 @@
 
 (deftest inventory-test
   (let [step-registry (-> (step-registry/create)
-                          (step-scanner/load-step-definitions ["test"]))]
+                          (step-scanner/scan ["test"]))]
     (is (= #{:kafka/topic-a
              :kafka/topic-b
              :kafka/topic-c

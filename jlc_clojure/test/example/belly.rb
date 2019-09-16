@@ -30,7 +30,7 @@ module ExampleTests
     board
   end
 
-  step :before, :after_step, tags: "@tag1 or @tag2" do |board|
+  step :before, :after_step, tags: "@tag1 or @tag2 and @rb" do |board|
     board
   end
 

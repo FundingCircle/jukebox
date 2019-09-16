@@ -4,7 +4,7 @@ require 'logger'
 
 # Scan the code
 module Jukebox
-  module Client
+  class Client
     # Scan paths for ruby step definitions.
     module StepScanner
       @logger = Logger.new(STDOUT)
@@ -21,7 +21,7 @@ module Jukebox
 
       class << self
         # Scan for step definitions.
-        def load_step_definitions!(glue_paths)
+        def scan(glue_paths)
           @logger.debug("Glue paths: #{glue_paths}")
 
           glue_paths.each do |path|
@@ -38,7 +38,7 @@ module Jukebox
         def enable_cucumber_compatibility(glue_paths)
           @logger.info('Switching to cucumber compatibility mode')
           require_relative '../cukes'
-          Jukebox::Cukes.load_step_definitions!(glue_paths)
+          Jukebox::Cukes.scan(glue_paths)
         end
       end
     end

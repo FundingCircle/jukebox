@@ -1,10 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'eventmachine'
-require 'faye/websocket'
 require 'logger'
-require_relative '../lib/jukebox/client'
+require 'jukebox/client'
 require 'json'
 require 'optparse'
 

@@ -18,7 +18,7 @@
                :scene/after-step})))
 
 (defn- require-namespaces-in-dir
-  "Scan namespaces in a dir and require them."
+  "Scans namespaces in a dir and require them."
   [dir]
   (for [ns (find/find-namespaces-in-dir dir)]
     (do
@@ -26,7 +26,7 @@
       (find-ns ns))))
 
 (defmulti find-hooks
-  "Find steps and hooks."
+  "Finds steps and hooks."
   (fn [source] (type source)))
 
 (defmethod find-hooks clojure.lang.Namespace
@@ -58,16 +58,17 @@
   [step-registry callback-fns]
   (reduce (fn [step-registry callback]
             (let [m        (meta callback)
-                  hooks    (map name (keys (select-keys m [:scene/before :scene/after :scene/before-step :scene/after-step])))
+                  hooks    (map (comp keyword name) (keys (select-keys m [:scene/before :scene/after :scene/before-step :scene/after-step])))
                   triggers (into (filter identity (conj (:scene/steps m) (:scene/step m))) hooks)
                   opts     (select-keys m [:scene/tags])]
+              (log/debugf "REGISTERING TRIGGERS: %s" triggers)
               (step-registry/add step-registry {:triggers triggers
                                                 :opts opts
                                                 :callback callback})))
           step-registry callback-fns))
 
-(defn load-step-definitions
-  "Scan for step definitions."
+(defn scan
+  "Scans for step definitions."
   [step-registry glue-paths]
   (log/debugf "Glue paths: %s" glue-paths)
   (if (= 0 (count glue-paths))

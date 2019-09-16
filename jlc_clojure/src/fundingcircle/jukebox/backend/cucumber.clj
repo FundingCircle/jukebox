@@ -31,7 +31,7 @@
   [f]
   (fn [world & args]
     (let [new-world (apply f world args)]
-      (when-not (get new-world ::world?)
+      (when-not (::world? new-world)
         (throw (ex-info "The scenario step context appears to have been dropped. (Step implementations are expected to return an updated context.)" {:old-board world :new-board new-world})))
       new-world)))
 
@@ -48,7 +48,6 @@
    table, for example: reading | \"1\" | 1 | we should interpret 1 as an int
    and \"1\" as a string."
   [string]
-  (log/debugf "READING CUKE STR: %s" string)
   (cond
     (re-matches #"^\d+" string) (edn/read-string string)
     (re-matches #"^:.*|\d+(\.\d+)" string) (edn/read-string string)
@@ -110,25 +109,24 @@
 
   (isScenarioScoped [_] false))
 
-(deftype JukeHookDefinition [tag-predicate hook-id]
+(deftype JukeHookDefinition [tag-predicate id]
   HookDefinition
   (getLocation [_ _detail?]
     ;; TODO: location of hook
-    (location hook-id))
+    (location id))
 
   (execute [_ scenario]
     (swap! world (update-world
                    (fn [world]
-                     (let [r (step-coordinator/drive-hook hook-id
-                                                          world
-                                                          {:status (str (.getStatus scenario))
-                                                           :failed? (.isFailed scenario)
-                                                           :name (.getName scenario)
-                                                           :id (.getId scenario)
-                                                           :uri (.getUri scenario)
-                                                           :lines (into [] (.getLines scenario))})]
-                       (log/debugf "Hook result: %s" r)
-                       r)))))
+                     (step-coordinator/drive-step
+                       id
+                       world
+                       [{:status (str (.getStatus scenario))
+                         :failed? (.isFailed scenario)
+                         :name (.getName scenario)
+                         :id (.getId scenario)
+                         :uri (.getUri scenario)
+                         :lines (into [] (.getLines scenario))}])))))
   (matches [_ tags]
     (.apply tag-predicate tags))
 
@@ -161,7 +159,6 @@
   ;; * </ul>
   ;; */
   (template [_]
-    (log/debugf "SNIPPET: %s" @snippets)
     (reduce (fn [t {:keys [template language]}]
               (str t
                    "\n  ```" language "\n"
@@ -179,20 +176,16 @@
   [[] nil])
 
 (defn -loadGlue [_ ^Glue glue glue-paths]
-  (log/debug "Loading glue")
   (let [glue-paths (mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
         setup      @(step-coordinator/restart glue-paths)]
-    (log/debug "Coordinator started")
     (reset! snippets (:snippets setup))
     (doseq [{:keys [id triggers opts]} (:definitions setup)]
       (doseq [trigger triggers]
-        (log/debugf "Registering definition %s" {:id id :trigger trigger :opts opts})
         (try
-          (case (->kebab-case-keyword trigger)
+          (case trigger
             :before (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
             :after (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
             :before-step (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-            "after_step" (throw (ex-info "" {}))
             :after-step (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
             (.addStepDefinition glue (->JukeStepDefinition id trigger step-coordinator/drive-step)))
           (catch cucumber.runtime.DuplicateStepDefinitionException _

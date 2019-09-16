@@ -5,20 +5,18 @@ require 'active_support/core_ext'
 require 'jukebox/client'
 
 step_registry = Jukebox::Client::StepRegistry
-step_scanner = Jukebox::Client::StepScanner
 
 describe Jukebox::Client do
   context 'jukebox client info' do
     it 'should include step definitions and template snippet' do
-      step_registry.clear
-      step_scanner.load_step_definitions!(['spec/glue_paths/jukebox'])
+      step_registry.instance.clear
       client_id = SecureRandom.uuid
 
-      expect(Jukebox::Client.client_info(client_id))
-        .to eq(action: 'register',
+      expect(Jukebox::Client.new(['spec/glue_paths/jukebox'], client_id).client_info)
+        .to eq(action: :register,
                client_id: client_id,
                language: 'ruby',
-               definitions: Jukebox::Client::StepRegistry.definitions,
+               definitions: Jukebox::Client::StepRegistry.instance.definitions,
                snippet: {
                  argument_joiner: ', ',
                  escape_pattern: %w['\'' '\\\''],
@@ -30,33 +28,8 @@ describe Jukebox::Client do
                            "      pending! # {4}\n" \
                            "      board # return the updated board\n" \
                            "    end\n" \
-                           "  end\n" })
-    end
-  end
-
-  context 'reading a message payload' do
-    subject do
-      local_board = { baz: 'bat' }
-      Jukebox::Client.read_message_data(
-        JSON[{ 'action': 'run', 'board': { 'foo': 'bar' } }],
-        local_board
-      )
-    end
-
-    it { is_expected.to eq(action: 'run', board: { foo: 'bar', baz: 'bat' }) }
-  end
-
-  context 'handling a request to run a step' do
-    subject do
-      @foo = Unserializable.new
-      Jukebox::Client.write_message_data(action: 'result',
-                                         board: { foo: @foo, bar: 'baz' })
-    end
-
-    it 'writes a result message' do
-      expect(subject).to eq('{"action":"result","board":{"bar":"baz"}}')
-      expect(Jukebox::Client.instance_variable_get(:@local_board))
-        .to eq(foo: @foo)
+                           "  end\n"
+               })
     end
   end
 
@@ -68,7 +41,7 @@ describe Jukebox::Client do
     end
 
     it 'an error message payload is created' do
-      expect(subject.except(:trace)).to eq(action: 'error',
+      expect(subject.except(:trace)).to eq(action: :error,
                                            foo: :bar,
                                            message: 'step failure test')
     end
@@ -78,17 +51,17 @@ describe Jukebox::Client do
     subject do
       @trigger = SecureRandom.uuid
       @test_callback = proc { |board, arg1| board.merge(arg1: arg1) }
-      step_registry.clear
-      step_registry.add @trigger, tags: '@foo', &@test_callback
+      step_registry.instance.clear
+      step_registry.instance.add @trigger, tags: '@foo', &@test_callback
 
-      @definition = step_registry.find_trigger(@trigger)
+      @definition = step_registry.instance.find_trigger(@trigger)
       Jukebox::Client.run(id: @definition[:id],
                           board: { a: 1 },
                           args: [2])
     end
 
     it 'produces a result message' do
-      expect(subject).to eq(action: 'result',
+      expect(subject).to eq(action: :result,
                             id: @definition[:id],
                             board: { a: 1, arg1: 2 },
                             args: [2])
