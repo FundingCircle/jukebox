@@ -132,7 +132,7 @@
   "Starts the step coordinator."
   [glue-paths]
   (when-not @server
-    (let [client-configs   (or (language-client-configs) (auto/detect))
+    (let [client-configs   (or (language-client-configs) (auto/detect {:clojure? true}))
           steps-registered (promise)
           s                (ServerSocket. 0)
           port             (.getLocalPort s)]

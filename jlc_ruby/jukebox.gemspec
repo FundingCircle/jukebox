@@ -13,6 +13,5 @@ Gem::Specification.new do |spec|
   spec.license = 'BSD-3-clause'
   spec.add_runtime_dependency 'activesupport'
   spec.add_runtime_dependency 'msgpack'
-  spec.add_development_dependency 'rspec'
-  spec.add_development_dependency 'watir'
+  spec.add_runtime_dependency 'rspec'
 end
