@@ -2,7 +2,8 @@
   "Defines the Jukebox DSL."
   (:require [fundingcircle.jukebox.client.step-registry :as step-registry]
             [clojure.string :as str])
-  (:import (java.util UUID)))
+  (:import (java.util UUID)
+           (cucumber.api PendingException)))
 
 (def ^:private trigger?
   "Checks whether a value is a string or keyword."
@@ -45,3 +46,8 @@
                        (assoc :scene/tags (:tags opts)))
               ~args
               ~@body)))))
+
+(defn pending!
+  "Marks a step definition as pending."
+  []
+  (throw (PendingException.)))

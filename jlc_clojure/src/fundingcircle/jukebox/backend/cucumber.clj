@@ -157,12 +157,16 @@
   ;; * </ul>
   ;; */
   (template [_]
-    (reduce (fn [t {:keys [template language]}]
-              (str t
-                   "\n  ```" language "\n"
-                   template
-                   "  ```\n"))
-            "" @snippets))
+    (str
+      (str/trimr
+        (str "      " (apply str (take 81 (repeat "_")))
+             "\n      \uD83C\uDFB6 {1} \uD83C\uDFB6\n      "
+             (str/replace
+               (reduce (fn [t {:keys [template language]}]
+                         (str t template "\n"))
+                       "" @snippets)
+               #"\n" "\n      ")
+             )) "\n"))
   (tableHint [_] nil)
   (arguments [_ args]
     (str/join ", " (cons "board" (keys args))))

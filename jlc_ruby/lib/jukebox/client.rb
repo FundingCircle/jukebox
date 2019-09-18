@@ -45,15 +45,12 @@ module Jukebox
       end
 
       def template
-        "  require 'jukebox'\n" \
-        "  module 'MyTests'\n" \
-        "    extend Jukebox\n" \
-        "\n" \
-        "    step ''{1}'' do |{3}|\n" \
-        "      pending! # {4}\n" \
-        "      board # return the updated board\n" \
-        "    end\n" \
-        "  end\n"
+        "\# Ruby:\n" \
+        "step ''{1}'' do\n" \
+        "  |{3}|\n" \
+        "  pending! # {4}\n" \
+        "  board # Return the updated board\n" \
+        "end\n" \
       end
 
       # Start this jukebox language client.

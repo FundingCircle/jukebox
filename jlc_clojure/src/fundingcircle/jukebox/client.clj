@@ -35,13 +35,11 @@
 
 (def ^:private template
   (str
-    "  (defn {2}\n"
-    "    \"Returns an updated context (`board`).\"\n"
-    "    '{':scene/step \"{1}\"'}'\n"
-    "    [{3}]\n"
-    "    ;; {4}\n"
-    "    (throw (cucumber.api.PendingException.))\n"
-    "    board) ;; Return the board\n"))
+    ";; Clojure:\n"
+    "(step \"{1}\"\n"
+    "  [{3}]\n"
+    "  (pending!) ;; {4}\n"
+    "  board) ;; Return the updated board\n"))
 
 (defn create
   "Creates a clojure jukebox language client."
