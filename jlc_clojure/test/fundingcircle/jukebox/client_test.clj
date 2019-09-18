@@ -16,27 +16,14 @@
       (is (= (client/client-info client)
              {:action :register
               :client-id client-id
-              :definitions []
               :language "clojure"
-              :resources
-              #{"foo"
-                :kafka/topic-a
-                :kafka/topic-b
-                :kafka/topic-c
-                :kafka/topic-d
-                :kafka/topic-e
-                :kafka/topic-f}
+              :definitions []
+              :resources #{"foo" :kafka/topic-c :kafka/topic-e :kafka/topic-d :kafka/topic-f :kafka/topic-a :kafka/topic-b}
               :snippet {:argument-joiner " "
-                        :escape-pattern ["\""
-                                         "\\\""]
-                        :template (str
-                                    "  (defn {2}\n"
-                                    "    \"Returns an updated context (`board`).\"\n"
-                                    "    '{':scene/step \"{1}\"'}'\n"
-                                    "    [{3}]\n"
-                                    "    ;; {4}\n"
-                                    "    (throw (cucumber.api.PendingException.))\n"
-                                    "    board) ;; Return the board\n")}})))))
+                        :escape-pattern ["\"" "\\\""]
+                        :template ";; Clojure:\n(step \"{1}\"\n  [{3}]\n  (pending!) ;; {4}\n  board) ;; Return the updated board\n"}}
+
+             )))))
 
 
 (deftest run-step

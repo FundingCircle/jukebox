@@ -42,7 +42,9 @@ module Jukebox
                    0x01 => Set,
                    0x02 => UUID }.freeze
 
-    EXTENSIONS.each { |type, klass| MessagePack::DefaultFactory.register_type(type, klass) }
+    EXTENSIONS.each do |type, klass|
+      MessagePack::DefaultFactory.register_type(type, klass)
+    end
 
     # Removes non-transmittable entries from the map, stashing them
     # in `local-board`. (Doesn't scan arrays)
@@ -66,13 +68,17 @@ module Jukebox
 
     def self.unpacker(io)
       input_stream = ::MessagePack::Unpacker.new(io)
-      EXTENSIONS.each { |type, klass| input_stream.register_type(type, klass, :from_msgpack_ext) }
+      EXTENSIONS.each do |type, klass|
+        input_stream.register_type(type, klass, :from_msgpack_ext)
+      end
       input_stream
     end
 
     def self.packer(io)
       output_stream = ::MessagePack::Packer.new(io)
-      EXTENSIONS.each { |type, klass| output_stream.register_type(type, klass, :to_msgpack_ext) }
+      EXTENSIONS.each do |type, klass|
+        output_stream.register_type(type, klass, :to_msgpack_ext)
+      end
       output_stream
     end
 
@@ -85,7 +91,6 @@ module Jukebox
   end
 
   class Client #:nodoc:
-
     # Sends a message to the coordinator.
     def send(message)
       board = message[:board] || {}

@@ -27,7 +27,7 @@
 
 (defn- stack-trace-element
   "Deserialize a stack trace."
-  [{:keys [class-name method-name file-name line-number]}]
+  [{:keys [class-name method-name file-name line-number] :as e}]
   (StackTraceElement. class-name method-name file-name line-number))
 
 (defonce server (atom nil))
@@ -141,7 +141,7 @@
       (reset! registration-completed steps-registered)
       (future (handle-client-connections s))
 
-      (log/infof "Spinning up jukebox language clients: %s" (str/join ", " (map :language client-configs)))
+      (log/debugf "Spinning up jukebox language clients: %s" (str/join ", " (map :language client-configs)))
       (doseq [client-config client-configs]
         (step-client/launch client-config port glue-paths))
       steps-registered)))

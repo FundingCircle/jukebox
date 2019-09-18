@@ -8,16 +8,18 @@ module Jukebox
     # Scanner for ruby step definitions.
     module StepScanner
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::WARN
-      @cuke_keywords = Set[:After,
-                           :AfterStep,
-                           :And,
-                           :Before,
-                           :BeforeStep,
-                           :Given,
-                           :Then,
-                           :When,
-                           :World]
+      @logger.level = Logger::INFO
+      $stdout.sync = true
+
+      CUKE_KEYWORDS = Set[:After,
+                          :AfterStep,
+                          :And,
+                          :Before,
+                          :BeforeStep,
+                          :Given,
+                          :Then,
+                          :When,
+                          :World]
 
       class << self
         # Scans for step definitions.
@@ -30,7 +32,7 @@ module Jukebox
             end
           end
         rescue NoMethodError => e
-          raise e unless @cuke_keywords.include?(e.name)
+          raise e unless CUKE_KEYWORDS.include?(e.name)
 
           enable_cucumber_compatibility(glue_paths)
         end

@@ -8,7 +8,6 @@ describe Jukebox::Client do
   step_registry = Jukebox::Client::StepRegistry
 
   context 'jukebox client info' do
-
     it 'should include step definitions and template snippet' do
       client_id = SecureRandom.uuid
 
@@ -20,15 +19,13 @@ describe Jukebox::Client do
                snippet: {
                  argument_joiner: ', ',
                  escape_pattern: %w['\'' '\\\''],
-                 template: "  require 'jukebox'\n" \
-                           "  module 'MyTests'\n" \
-                           "    extend Jukebox\n" \
-                           "\n" \
-                           "    step ''{1}'' do |{3}|\n" \
-                           "      pending! # {4}\n" \
-                           "      board # return the updated board\n" \
-                           "    end\n" \
-                           "  end\n"
+                 template: "# Ruby:\n" \
+                           "step ''{1}'' do\n" \
+                           "  |{3}|\n" \
+                           "  pending! # {4}\n" \
+                           "  board # Return the updated board\n" \
+                           "end\n" \
+
                })
     end
   end

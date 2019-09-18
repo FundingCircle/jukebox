@@ -8,7 +8,6 @@ require 'set'
 
 module Jukebox
   class Client
-
     # Step registry.
     class StepRegistry
       include Singleton
@@ -43,6 +42,7 @@ module Jukebox
         callback.call(board, *args)
       end
 
+      # Finds a step's definition
       def find_definition(trigger)
         @definitions.find { |d| d[:triggers].include? trigger }
       end

@@ -17,35 +17,40 @@ module Jukebox
   class Client
     @local_board = {}
     @logger = Logger.new(STDOUT)
-    @logger.level = Logger::DEBUG
+    @logger.level = Logger::INFO
     $stdout.sync = true
 
     class << self
       # Returns an error response message.
       def error(message, exception)
-        message.merge(
+        message.merge!(
           action: :error,
           message: exception.message,
           trace: exception.backtrace_locations&.map do |location|
-            { class_name: location.label,
-              file_name: location.path,
+            @logger.debug("Backtrace class_name: #{location.label.class}")
+            { class_name: '' + location.label,
+              file_name: '' + location.path,
               line_number: location.lineno,
-              method_name: location.label }
+              method_name: '' + location.label }
           end
         )
+        @logger.debug("Sending error: #{message}: #{exception}")
+        message
       end
 
       # Runs a step or hook, returning a result or error response.
       def run(message)
         @logger.debug("Running: #{message}")
-        message.merge!(action: :result, board: StepRegistry.instance.run(message))
+        board = StepRegistry.instance.run(message)
+        message.merge!(action: :result, board: board)
         message
       rescue Exception => e
+        pp e
         error(message, e)
       end
 
       def template
-        "\# Ruby:\n" \
+        "# Ruby:\n" \
         "step ''{1}'' do\n" \
         "  |{3}|\n" \
         "  pending! # {4}\n" \

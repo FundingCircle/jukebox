@@ -4,7 +4,6 @@ require 'rspec'
 require 'jukebox/client/step_registry'
 require 'jukebox/client/step_scanner'
 
-
 describe Jukebox::Client::StepScanner do
   StepRegistry = Jukebox::Client::StepRegistry
   StepScanner = Jukebox::Client::StepScanner

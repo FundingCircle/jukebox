@@ -6,7 +6,13 @@ require 'jukebox'
 module Jukebox
   # Cucumber-compatibility layer
   module Cukes
+    @logger = Logger.new(STDOUT)
+    @logger.level = Logger::INFO
+    $stdout.sync = true
+
     include RSpec::Matchers
+
+    # rubocop:disable Naming/MethodName
 
     def Given(trigger, &block)
       Cukes.step(trigger, &block)
@@ -32,6 +38,8 @@ module Jukebox
       Cukes.extend mixin
     end
 
+    # rubocop:enable Naming/MethodName
+
     # Mark a step implementation as pending
     def pending
       raise PendingError
@@ -45,24 +53,22 @@ module Jukebox
     alias Then Given
     alias And Given
 
-    # Evaluation context for step definitions
-    class World
-      extend Jukebox::Cukes
-    end
-
     class << self
       def load_support_files(path)
+        @logger.debug("Loading support files from: #{path}")
         $LOAD_PATH.unshift "./#{path}/support"
+        env_rb = "./#{path}/support/env.rb"
+        load env_rb if File.file?(env_rb)
         Dir["./#{path}/support/**/*.rb"].sort.each do |file|
           load file
         end
       end
 
       def load_step_definitions(path)
+        @logger.debug("Loading step definition files from: #{path}")
         Dir["./#{path}/step_definitions/**/*.rb"].sort.each do |file|
-          File.open(file) do |glue|
-            World.instance_eval glue.read, file
-          end
+          @logger.debug("Loading step definitions file: #{file}")
+          load file
         end
       end
 
@@ -87,3 +93,5 @@ module Jukebox
     end
   end
 end
+
+extend Jukebox::Cukes # rubocop:disable Style/MixinUsage
