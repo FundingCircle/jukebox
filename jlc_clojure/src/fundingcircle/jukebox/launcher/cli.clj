@@ -7,9 +7,10 @@
 (defmethod launch "jlc-cli"
   [{:keys [cmd env dir]} port glue-paths]
   (log/debugf "Starting '%s' on port %s - glue paths: %s" cmd port glue-paths)
-  (let [args (concat cmd glue-paths ["--port" (str port) :env env :dir dir])
-        p (apply sh/proc args)
-        out (future (sh/stream-to p :out (System/out)))
-        err (future (sh/stream-to p :err (System/err)))
-        exit (future (sh/exit-code p))]
-    {:out out :err err :exit exit}))
+  (let [args      (concat cmd glue-paths ["--port" (str port) :env env :dir dir])
+        p         (apply sh/proc args)
+        exit-code (future (sh/exit-code p))]
+    (future (sh/stream-to p :err (System/err)))
+    (future (sh/stream-to p :out (System/out)))
+    (when (not= 0 @exit-code)
+      (throw (ex-info (format "Jukebox language client exited with non-zero status: %s" @exit-code) {})))))

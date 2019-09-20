@@ -2,95 +2,60 @@
   "Coordinate with remote step executors."
   (:require [cheshire.core :as json]
             [clojure.tools.logging :as log]
+            [fundingcircle.jukebox.coordinator.error-tracker :as error-tracker :refer [with-error-tracking with-future-error-tracking]]
+            [fundingcircle.jukebox.coordinator.registration-tracker :as registration-tracker]
             [fundingcircle.jukebox.launcher :as step-client]
             [fundingcircle.jukebox.launcher.auto :as auto]
-            [msgpack.core :as msg]
-            [clojure.string :as str])
-  (:import (java.io Closeable DataOutputStream DataInputStream)
+            [msgpack.core :as msg])
+  (:import (java.io DataOutputStream DataInputStream)
            (java.net ServerSocket)))
 
 (require 'fundingcircle.jukebox.msg)
 
-(defonce client-count (atom 0))
-(defonce client-ids (atom #{}))
-(defonce callbacks (atom {}))
-(defonce registration-completed (atom nil))
-(defonce result-received (atom nil))
-(defonce definitions (atom []))
-(defonce snippets (atom []))
-(defonce ws (atom nil))
+(defonce server-socket (atom nil))
+(defonce clients (atom nil))
 
 (defn send!
-  "Send a message to the language client over the web socket."
+  "Send a message to a language client."
   [client-id message]
-  (msg/pack-stream message (get-in @ws [client-id :out])))
+  (msg/pack-stream message (get-in @clients [client-id :out])))
+
+(defn recv!
+  "Receive a message from a language client."
+  [client-id]
+  (msg/unpack-stream (get-in @clients [client-id :in])))
 
 (defn- stack-trace-element
   "Deserialize a stack trace."
   [{:keys [class-name method-name file-name line-number] :as e}]
   (StackTraceElement. class-name method-name file-name line-number))
 
-(defonce server (atom nil))
-
 (defn stop
   "Stop step coordinator."
   []
-  (when @server
-    (.close ^Closeable @server))
-  (reset! ws nil)
-  (reset! server nil)
-  (reset! callbacks {})
-  (reset! definitions [])
-  (reset! snippets [])
-  (reset! result-received nil)
-  (reset! client-ids #{})
-  (reset! client-count 0))
+  (swap! server-socket #(when % (.close %)))
+  (reset! clients nil)
+  (error-tracker/reset))
 
 (defn drive-step
   "Find a jukebox language client that knows about `step`, and ask for it to be run."
-  [id board args]
-  (if-let [client-id (get @callbacks id)]
-    (do
-      (reset! result-received (promise))
+  [step-registry id board args]
+  (with-error-tracking
+    (let [client-id (get (:callbacks step-registry) id)]
+      (assert client-id)
+
       (send! client-id {:action :run
                         :id id
                         :board board
                         :args args})
-      (let [result @@result-received]
-        (log/debugf "Result received: %s" result)
+
+      (let [result (recv! client-id)]
         (case (:action result)
           :result (:board result)
           :error (let [e (RuntimeException. (str "Step exception: " (:error result)))]
                    (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
                    (throw e))
-          (do
-            (log/errorf "Don't know how to handle step message: %s" result)
-            (stop)))))
-    (do
-      (log/errorf "No client knows how to handle step: %s" id)
-      board)))
-
-(defn register-client-steps
-  "Register steps that a jukebox language client knows how to handle."
-  [{:keys [client-id language] :as message}]
-  (log/debugf "Registering client steps (%s, %s): %s\n" language client-id message)
-  (swap! definitions into (:definitions message))
-  (swap! callbacks merge
-         (->> (map (fn [{:keys [id]}] [id client-id]) (:definitions message))
-              (into {})))
-  (swap! snippets conj (assoc (:snippet message) :language language))
-  {:status 202})
-
-(defn handle-client-message
-  ""
-  [message]
-  (log/debugf "Handling message from client: %s" message)
-  (case (:action message)
-    :result (deliver @result-received message)
-    :error (deliver @result-received message)
-    (do
-      (log/errorf "Don't know how to handle client message: %s" message)
-      (stop))))
+          (throw (ex-info "Unknown message from client" {:message result})))))))
 
 (defn- language-client-configs
   "Load language client configs from a json file named `.jukebox` on the classpath."
@@ -104,47 +69,34 @@
     (when (:languages project-configs)
       (filter #(project-languages (:language %)) language-clients))))
 
-(defn handle-client-connections
+(defn handle-client-registrations
   "Handles client connections."
-  [server-socket]
-  (while (not (.isClosed server-socket))
-    (let [socket (.accept server-socket)
-          in     (DataInputStream. (.getInputStream socket))
-          out    (DataOutputStream. (.getOutputStream socket))]
-      (future
-        (try
-          (let [message-data (msg/unpack-stream in)
-                {:keys [client-id] :as message} message-data]
-            (do
-              (register-client-steps message)
-              (swap! ws assoc client-id {:socket socket :out out})
-              (swap! client-count dec)
-              (swap! client-ids conj client-id)
-              (when (= 0 @client-count)
-                (deliver @registration-completed {:definitions @definitions :snippets @snippets}))
-              (loop [message (msg/unpack-stream in)]
-                (handle-client-message message)
-                (recur (msg/unpack-stream in)))))
-          (catch Throwable e
-            (.printStackTrace e)))))))
+  []
+  (try
+    (while (not (.isClosed @server-socket))
+      (let [socket (.accept @server-socket)
+            in     (DataInputStream. (.getInputStream socket))
+            out    (DataOutputStream. (.getOutputStream socket))
+            {:keys [client-id] :as message} (msg/unpack-stream in)]
+        (swap! clients assoc client-id {:socket socket :out out :in in})
+        (registration-tracker/register! message)))
+    (catch java.net.SocketException _
+      (log/debugf "Socket closed"))))
 
 (defn start
   "Starts the step coordinator."
   [glue-paths]
-  (when-not @server
-    (let [client-configs   (or (language-client-configs) (auto/detect {:clojure? true}))
-          steps-registered (promise)
-          s                (ServerSocket. 0)
-          port             (.getLocalPort s)]
-      (reset! server s)
-      (reset! client-count (count client-configs))
-      (reset! registration-completed steps-registered)
-      (future (handle-client-connections s))
+  (let [client-configs (or (language-client-configs) (auto/detect {:clojure? true}))]
+    (reset! server-socket (ServerSocket. 0))
+    (registration-tracker/init client-configs)
+    (with-future-error-tracking
+      (handle-client-registrations))
 
-      (log/debugf "Spinning up jukebox language clients: %s" (str/join ", " (map :language client-configs)))
-      (doseq [client-config client-configs]
-        (step-client/launch client-config port glue-paths))
-      steps-registered)))
+    (doseq [client-config client-configs]
+      (with-future-error-tracking
+        (step-client/launch client-config (.getLocalPort @server-socket) glue-paths)))
+
+    (registration-tracker/step-registry)))
 
 (defn restart
   "Restart the step coordinator."

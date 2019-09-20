@@ -5,11 +5,11 @@
             :url "http://opensource.org/licenses/BSD-3-Clause"}
   :dependencies [[cheshire "5.8.1"]
                  [clojure-msgpack "1.2.1"]
-                 [compojure "1.6.1"]
                  [io.cucumber/cucumber-core "4.7.1"]
                  [io.cucumber/cucumber-junit "4.7.1"]
                  [me.raynes/conch "0.8.0"]
                  [org.clojure/clojure "1.10.1"]
+                 [org.clojure/core.async "0.4.500"]
                  [org.clojure/tools.cli "0.4.2"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/tools.namespace "0.2.11"]

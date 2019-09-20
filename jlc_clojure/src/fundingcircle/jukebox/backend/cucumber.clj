@@ -77,7 +77,7 @@
 
 (defmethod process-arg :default [arg] arg)
 
-(defrecord JukeStepDefinition [id pattern step-fn]
+(defrecord JukeStepDefinition [step-registry id pattern step-fn]
   StepDefinition
   (matchedArguments [_ step]
     (.argumentsFrom
@@ -94,6 +94,7 @@
     (swap! world assoc :scene/step pattern)
     (swap! world (update-world (fn [world]
                                  (step-coordinator/drive-step
+                                   step-registry
                                    id
                                    (assoc world :scene/step pattern)
                                    (mapv process-arg args))))))
@@ -107,7 +108,7 @@
 
   (isScenarioScoped [_] false))
 
-(deftype JukeHookDefinition [tag-predicate id]
+(deftype JukeHookDefinition [tag-predicate step-registry id]
   HookDefinition
   (getLocation [_ _detail?]
     ;; TODO: location of hook
@@ -117,6 +118,7 @@
     (swap! world (update-world
                    (fn [world]
                      (step-coordinator/drive-step
+                       step-registry
                        id
                        world
                        [{:status (str (.getStatus scenario))
@@ -162,7 +164,7 @@
         (str "      " (apply str (take 81 (repeat "_")))
              "\n      \uD83C\uDFB6 {1} \uD83C\uDFB6\n      "
              (str/replace
-               (reduce (fn [t {:keys [template language]}]
+               (reduce (fn [t [template language]]
                          (str t template "\n"))
                        "" @snippets)
                #"\n" "\n      ")
@@ -179,17 +181,17 @@
 
 (defn -loadGlue [_ ^Glue glue glue-paths]
   (let [glue-paths (mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
-        setup      @(step-coordinator/restart glue-paths)]
-    (reset! snippets (:snippets setup))
-    (doseq [{:keys [id triggers opts]} (:definitions setup)]
+        step-registry      (step-coordinator/restart glue-paths)]
+    (reset! snippets (:snippets step-registry))
+        (doseq [{:keys [id triggers opts]} (:definitions step-registry)]
       (doseq [trigger triggers]
         (try
           (case trigger
-            :before (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-            :after (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-            :before-step (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-            :after-step (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) id))
-            (.addStepDefinition glue (->JukeStepDefinition id trigger step-coordinator/drive-step)))
+            :before (.addBeforeHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) step-registry id))
+            :after (.addAfterHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) step-registry id))
+            :before-step (.addBeforeStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) step-registry id))
+            :after-step (.addAfterStepHook glue (->JukeHookDefinition (TagPredicate. (:tags opts)) step-registry id))
+            (.addStepDefinition glue (->JukeStepDefinition step-registry id trigger step-coordinator/drive-step)))
           (catch cucumber.runtime.DuplicateStepDefinitionException _
             (log/errorf "Duplicate step definition: %s" {:trigger trigger :tags (:tags opts) :id id :glue glue})))))))
 

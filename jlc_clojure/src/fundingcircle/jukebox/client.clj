@@ -5,7 +5,8 @@
             [fundingcircle.jukebox.client.resource-scanner :as resource-scanner]
             [fundingcircle.jukebox.client.step-registry :as step-registry]
             [fundingcircle.jukebox.client.step-scanner :as step-scanner]
-            [fundingcircle.jukebox.msg :as msg])
+            [fundingcircle.jukebox.msg :as msg]
+            [clojure.tools.logging :as log])
   (:import (java.util UUID)
            (java.net Socket)
            (java.io DataOutputStream DataInputStream))
@@ -78,19 +79,20 @@
 (defn handle-coordinator-messages
   "Handles messages from the coordinator"
   [{:keys [step-registry] :as client}]
-  (doseq [message (msg/messages client)]
-    (try
-      (case (:action message)
-        :run (msg/send client (run step-registry message))
-        (throw (ex-info (format "Unknown action: %s" message) {})))
-      (catch Throwable e (error message e)))))
+  (try
+    (doseq [message (msg/messages client)]
+      (try
+        (case (:action message)
+          :run (msg/send client (run step-registry message))
+          (throw (ex-info (format "Unknown action: %s" message) {})))
+        (catch Throwable e (error message e))))
+    (catch java.io.EOFException _
+      (log/debug "Connection closed."))))
 
 (defn start
   "Start this jukebox language client."
   [_client-config port glue-paths]
-  (let [client (-> (create glue-paths)
-                   (connect port))]
-    @(future (handle-coordinator-messages client))))
+  (handle-coordinator-messages (connect (create glue-paths) port)))
 
 (def ^:private cli-options
   "Command line options."

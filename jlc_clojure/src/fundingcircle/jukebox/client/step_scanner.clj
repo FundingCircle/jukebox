@@ -50,7 +50,6 @@
   specified."
   ([] (mapcat hooks (all-ns)))
   ([source]
-   (log/debugf "Loading hooks from source: %s" source)
    (find-hooks source)))
 
 (defn register-callbacks
@@ -61,7 +60,6 @@
                   hooks    (map (comp keyword name) (keys (select-keys m [:scene/before :scene/after :scene/before-step :scene/after-step])))
                   triggers (into (filter identity (conj (:scene/steps m) (:scene/step m))) hooks)
                   opts     (select-keys m [:scene/tags])]
-              (log/debugf "REGISTERING TRIGGERS: %s" triggers)
               (step-registry/add step-registry {:triggers triggers
                                                 :opts opts
                                                 :callback callback})))

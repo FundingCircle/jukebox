@@ -1,31 +1,12 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-<!--            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>-->
-<!--            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>-->
+            <!--            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>-->
+            <!--            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>-->
             <pattern>%logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
     <logger name="fundingcircle.jukebox" level="info">
         <appender-ref ref="STDOUT"/>
     </logger>
-<!--    <logger name="fundingcircle.jukebox.client.step-scanner" level="debug">-->
-<!--        <appender-ref ref="STDOUT"/>-->
-<!--    </logger>-->
-
-    <!--    <logger name="fundingcircle.jukebox.coordinator" level="error">-->
-<!--        <appender-ref ref="STDOUT"/>-->
-<!--    </logger>-->
-<!--    <logger name="fundingcircle.jukebox" level="error">-->
-<!--        <appender-ref ref="STDOUT"/>-->
-<!--    </logger>-->
-<!--    <logger name="fundingcircle.jukebox.backend.cucumber" level="info">-->
-<!--        <appender-ref ref="STDOUT"/>-->
-<!--    </logger>-->
-    <!--    <logger name="fundingcircle.jukebox.backend.cucumber" level="debug">-->
-<!--        <appender-ref ref="STDOUT"/>-->
-<!--    </logger>-->
-    <root level="error">
-        <appender-ref ref="STDOUT" />
-    </root>
 </configuration>
