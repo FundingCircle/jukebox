@@ -10,15 +10,15 @@
   "Detects what languages the current project uses, and return launch configs."
   ([] (detect {}))
   ([{:keys [clojure? ruby?]}]
-   (let [clojure?  (or clojure?
-                       (.exists (io/file "deps.edn"))
-                       (.exists (io/file "project.clj")))
-         ruby?     (or ruby?
-                       (.exists (io/file "Gemfile")))
-         languages (cond-> []
-                           clojure? (conj {:language "clojure" :launcher "jlc-clj-embedded"})
-                           ruby? (conj {:language "ruby" :launcher "jlc-cli" :cmd ["bundle" "exec" "jlc_ruby"]}))]
-     (if (seq languages)
-       (log/debugf "Detected project languages: %s" (mapv :language languages))
+   (let [clojure?         (or clojure?
+                              (.exists (io/file "deps.edn"))
+                              (.exists (io/file "project.clj")))
+         ruby?            (or ruby?
+                              (.exists (io/file "Gemfile")))
+         language_clients (cond-> []
+                                  clojure? (conj {:language "clojure" :launcher "jlc-clj-embedded"})
+                                  ruby? (conj {:language "ruby" :launcher "jlc-cli" :cmd ["bundle" "exec" "jlc_ruby"]}))]
+     (if (seq language_clients)
+       (log/debugf "Detected project languages: %s" (mapv :language language_clients))
        (log/errorf "No project languages auto-detected"))
-     languages)))
+     language_clients)))

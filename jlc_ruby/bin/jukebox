@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'logger'
+require 'jukebox/coordinator'
+require 'json'
+require 'optparse'
+
+@logger = Logger.new(STDOUT)
+@logger.level = Logger::INFO
+
+@logger.debug("GEM_PATH: #{ENV['GEM_PATH']}")
+
+glue_paths = []
+tags = []
+OptionParser.new do |opts|
+  opts.banner = 'Usage: jukebox [options] <glue paths>'
+
+  opts.on('-g GLUE', '--glue GLUE', String, 'Add a glue path') do |glue_path|
+    glue_paths << glue_path
+  end
+
+  opts.on('-t TAGS', '--tags TAGS', String, 'Specify feature tags') do |tag|
+    tags << tag
+  end
+
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
+  end
+end.parse!
+
+feature_paths = ARGV
+
+raise OptionParser::MissingArgument, 'glue_paths' if glue_paths.empty?
+raise OptionParser::MissingArgument, 'feature_paths' if glue_paths.empty?
+
+$LOAD_PATH.unshift 'lib'
+
+begin
+  Jukebox::Coordinator.instance.start(feature_paths, glue_paths)
+rescue ::Jukebox::Coordinator::StepError => e
+  puts e.message
+  pp e.message
+  puts "Backtrace: #{e.client_backtrace.class}"
+  pp e.client_backtrace.class
+  e.client_backtrace.each do |backtrace_entry|
+    puts backtrace_entry
+  end
+  # puts e.client_backtrace.join '\n'
+  puts "DONE"
+end

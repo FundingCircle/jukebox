@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'rspec'
-require 'jukebox/client/step_registry'
+require 'jukebox/step_registry'
 
-describe Jukebox::Client::StepRegistry do
+describe Jukebox::StepRegistry do
   context 'a step definition is added to the step registry' do
-    step_registry = Jukebox::Client::StepRegistry
+    step_registry = Jukebox::StepRegistry
 
     before :all do
       @trigger = SecureRandom.uuid

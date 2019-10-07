@@ -9,7 +9,7 @@ class Symbol #:nodoc:
   end
 
   def self.from_msgpack_ext(data)
-    MessagePack.unpack(data).to_sym
+    MessagePack.unpack(data).sub(/-/, '_').to_sym
   end
 end
 
@@ -90,7 +90,11 @@ module Jukebox
     end
   end
 
-  class Client #:nodoc:
+  class Messenger #:nodoc:
+    def initialize(socket)
+      @socket = socket
+    end
+
     # Sends a message to the coordinator.
     def send(message)
       board = message[:board] || {}
@@ -100,11 +104,16 @@ module Jukebox
     end
 
     def messages
-      Messages.new(@socket)
+      @messages ||= Messages.new(@socket)
+    end
+
+    def recv
+      messages.first
     end
 
     # Sequence of messages from the coordinator
     class Messages
+      include Enumerable
       def initialize(socket)
         @socket = socket
       end

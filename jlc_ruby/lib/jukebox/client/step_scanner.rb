@@ -8,7 +8,7 @@ module Jukebox
     # Scanner for ruby step definitions.
     module StepScanner
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::INFO
+      @logger.level = Logger::DEBUG
       $stdout.sync = true
 
       CUKE_KEYWORDS = Set[:After,

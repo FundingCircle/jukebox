@@ -3,7 +3,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [fundingcircle.jukebox.client :as client]
             [fundingcircle.jukebox.client.step-scanner :as step-scanner]
-            [fundingcircle.jukebox.client.step-registry :as step-registry])
+            [fundingcircle.jukebox.step-registry :as step-registry])
   (:import (java.util UUID)))
 
 (require 'example.belly)
@@ -33,7 +33,7 @@
           test-callback (fn [_board _arg1] (assert false))
           step-registry (-> (step-registry/create)
                             (step-scanner/scan ["test/glue-paths/jukebox"]) ;; TODO
-                            (step-registry/add {:triggers [trigger] :tags "@foo" :callback test-callback})
+                            (step-registry/register-step {:triggers [trigger] :tags "@foo" :callback test-callback})
                             )
           ]
 

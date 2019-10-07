@@ -164,8 +164,8 @@
         (str "      " (apply str (take 81 (repeat "_")))
              "\n      \uD83C\uDFB6 {1} \uD83C\uDFB6\n      "
              (str/replace
-               (reduce (fn [t [template language]]
-                         (str t template "\n"))
+               (reduce (fn [t [language snippet]]
+                         (str t (:template snippet) "\n"))
                        "" @snippets)
                #"\n" "\n      ")
              )) "\n"))
@@ -180,10 +180,10 @@
   [[] nil])
 
 (defn -loadGlue [_ ^Glue glue glue-paths]
-  (let [glue-paths (mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
-        step-registry      (step-coordinator/restart glue-paths)]
+  (let [glue-paths    (mapv #(if (= java.net.URI (class %)) (.getSchemeSpecificPart %) %) glue-paths)
+        step-registry (step-coordinator/restart glue-paths)]
     (reset! snippets (:snippets step-registry))
-        (doseq [{:keys [id triggers opts]} (:definitions step-registry)]
+    (doseq [{:keys [id triggers opts]} (:definitions step-registry)]
       (doseq [trigger triggers]
         (try
           (case trigger

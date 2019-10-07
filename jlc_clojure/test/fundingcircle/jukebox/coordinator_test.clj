@@ -4,8 +4,13 @@
 
 (deftest start-test
   (let [steps (coordinator/restart ["test/example"])]
-    (is (= #{{:triggers ["my belly should growl"], :opts {}}
+    (is (= #{{:triggers [:after-step], :opts #:scene{:tags nil}}
+             {:triggers [:before-step], :opts #:scene{:tags ["@bat"]}}
+             {:triggers [:before-step], :opts #:scene{:tags nil}}
+             {:triggers ["a clojure step that fails"], :opts #:scene{:tags nil}}
+             {:triggers ["my belly should growl"], :opts {}}
              {:triggers [:before :after-step], :opts #:scene{:tags ["@tag1 or @tag2 and @rb"]}}
+             {:triggers [:after-step], :opts #:scene{:tags ["@bat"]}}
              {:triggers [:after], :opts #:scene{:tags ["@qux"]}}
              {:triggers ["a ruby step that fails"], :opts {}}
              {:triggers ["today is Sunday"], :opts {}}

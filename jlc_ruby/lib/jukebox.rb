@@ -19,7 +19,7 @@ module Jukebox
   end
 
   def step(*triggers, **opts, &block)
-    Jukebox::Client::StepRegistry.instance.add(*triggers, **opts, &block)
+    Jukebox::StepRegistry.instance.add(*triggers, **opts, &block)
   end
 
   # Mark a step implementation as pending

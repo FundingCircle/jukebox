@@ -1,14 +1,14 @@
-(ns fundingcircle.jukebox.client.step-registry-test
+(ns fundingcircle.jukebox.step-registry-test
   "Tests of the step registry."
   (:require [clojure.test :refer [deftest is testing]]
-            [fundingcircle.jukebox.client.step-registry :as step-registry])
+            [fundingcircle.jukebox.step-registry :as step-registry])
   (:import (java.util UUID)))
 
 (deftest registry-test
   (let [trigger      (str (UUID/randomUUID))
         test-callback (fn test-callback [board arg1] (assoc board :arg1 arg1))
         step-registry (-> (step-registry/create)
-                          (step-registry/add {:triggers [trigger]
+                          (step-registry/register-step {:triggers [trigger]
                                               :opts {:scene/tags "@foo"}
                                               :callback test-callback}))
         definition (step-registry/find-definition step-registry trigger)

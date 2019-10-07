@@ -3,7 +3,7 @@
   (:require [clojure.tools.namespace.find :as find]
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [fundingcircle.jukebox.client.step-registry :as step-registry]))
+            [fundingcircle.jukebox.step-registry :as step-registry]))
 
 (defn scene-related?
   "Checks whether a var is tagged with any scene related metadata."
@@ -60,7 +60,7 @@
                   hooks    (map (comp keyword name) (keys (select-keys m [:scene/before :scene/after :scene/before-step :scene/after-step])))
                   triggers (into (filter identity (conj (:scene/steps m) (:scene/step m))) hooks)
                   opts     (select-keys m [:scene/tags])]
-              (step-registry/add step-registry {:triggers triggers
+              (step-registry/register-step step-registry {:triggers triggers
                                                 :opts opts
                                                 :callback callback})))
           step-registry callback-fns))

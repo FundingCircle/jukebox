@@ -5,7 +5,7 @@
             [yagni.jvm :as jvm]
             [yagni.namespace :as namesp]
             [yagni.namespace.form :as form]
-            [fundingcircle.jukebox.client.step-registry :as step-registry]
+            [fundingcircle.jukebox.step-registry :as step-registry]
             [clojure.tools.logging :as log]))
 
 (defn- flattened-call-graph

@@ -1,12 +1,12 @@
-(ns fundingcircle.jukebox.client.step-registry
+(ns fundingcircle.jukebox.step-registry
   "Step registry."
-  (:require [clojure.tools.logging :as log])
+  (:refer-clojure :exclude [merge])
   (:import (java.util UUID)))
 
 (defn create
   "Creates a step registry."
   []
-  {:definitions [] :callbacks {}})
+  {:snippets {} :definitions [] :callbacks {}})
 
 (defn definitions
   "Gets the step definitions that have been loaded."
@@ -18,14 +18,23 @@
   [step-registry]
   (:callbacks step-registry))
 
-(defn add
-  "Add a step or hook to the step registry."
+(defn merge
+  "Merge step registry."
+  [step-registry language snippet definitions callbacks]
+  (-> step-registry
+      (update :snippets assoc language snippet)
+      (update :definitions into definitions)
+      (update :callbacks clojure.core/merge callbacks)))
+
+(defn register-step
+  "Registers a step or hook definition."
   [step-registry {:keys [triggers opts callback]}]
-  (let [id (str (UUID/randomUUID))
+  (let [id   (str (UUID/randomUUID))
         tags (:scene/tags opts)
         tags (if (string? tags) [tags] tags)
         opts (dissoc (assoc opts :scene/tags tags) :tags)]
     (-> step-registry
+
         (update :callbacks assoc id callback)
         (update :definitions conj {:id id :triggers triggers :opts opts}))))
 

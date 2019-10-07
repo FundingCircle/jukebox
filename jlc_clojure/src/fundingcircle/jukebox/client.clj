@@ -3,7 +3,7 @@
   (:require [clojure.string :as str]
             [clojure.tools.cli :as cli]
             [fundingcircle.jukebox.client.resource-scanner :as resource-scanner]
-            [fundingcircle.jukebox.client.step-registry :as step-registry]
+            [fundingcircle.jukebox.step-registry :as step-registry]
             [fundingcircle.jukebox.client.step-scanner :as step-scanner]
             [fundingcircle.jukebox.msg :as msg]
             [clojure.tools.logging :as log])
@@ -66,6 +66,7 @@
 (defn connect
   "Connects to the jukebox coordinator and registers known step definitions."
   [client port]
+  ;(println "xClojure: Connecting to" port)
   (let [socket (Socket. "localhost" port)
         in     (DataInputStream. (.getInputStream socket))
         out    (DataOutputStream. (.getOutputStream socket))
@@ -94,28 +95,3 @@
   [_client-config port glue-paths]
   (handle-coordinator-messages (connect (create glue-paths) port)))
 
-(def ^:private cli-options
-  "Command line options."
-  [["-p" "--port PORT" "Port number"]
-   ["-h" "--help" "Prints this help"]])
-
-(defn- banner
-  "Print the command line banner."
-  [summary]
-  (println "Usage: jlc_clojure [options] <glue paths>.\n%s")
-  (println summary))
-
-(defn -main
-  "Launch the clojure jukebox language client from the command line."
-  [& args]
-  (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
-    (cond
-      (:help options)
-      (banner summary)
-
-      errors
-      (do
-        (binding [*out* *err*] (println (str/join \newline errors)))
-        (System/exit 1))
-
-      :else (start nil (:port options) arguments))))

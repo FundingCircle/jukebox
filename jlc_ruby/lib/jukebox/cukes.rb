@@ -85,6 +85,7 @@ module Jukebox
           if block.arity == args.size + 1
             Cukes.instance_exec(board, *args, &block)
           else
+            puts "Cukes running block: #{block}"
             Cukes.instance_exec(*args, &block)
             board
           end

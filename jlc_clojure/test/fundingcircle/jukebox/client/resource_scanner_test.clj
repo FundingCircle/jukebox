@@ -3,7 +3,7 @@
   (:require [clojure.test :refer [deftest is]]
             [fundingcircle.jukebox.client.resource-scanner :as resource-scanner]
             [fundingcircle.jukebox.client.step-scanner :as step-scanner]
-            [fundingcircle.jukebox.client.step-registry :as step-registry]))
+            [fundingcircle.jukebox.step-registry :as step-registry]))
 
 (require 'example.belly)
 (require 'glue-paths.jukebox.step-definitions.is-it-friday-yet)

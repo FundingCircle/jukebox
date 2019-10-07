@@ -2,8 +2,7 @@
   "Coordinate with remote step executors."
   (:require [cheshire.core :as json]
             [clojure.tools.logging :as log]
-            [fundingcircle.jukebox.coordinator.error-tracker :as error-tracker :refer [with-error-tracking with-future-error-tracking]]
-            [fundingcircle.jukebox.coordinator.registration-tracker :as registration-tracker]
+            [fundingcircle.jukebox.step-registry :as step-registry]
             [fundingcircle.jukebox.launcher :as step-client]
             [fundingcircle.jukebox.launcher.auto :as auto]
             [msgpack.core :as msg])
@@ -14,13 +13,14 @@
 
 (defonce server-socket (atom nil))
 (defonce clients (atom nil))
+(defonce step-registry (atom (step-registry/create)))
 
-(defn send!
+(defn- send!
   "Send a message to a language client."
   [client-id message]
   (msg/pack-stream message (get-in @clients [client-id :out])))
 
-(defn recv!
+(defn- recv!
   "Receive a message from a language client."
   [client-id]
   (msg/unpack-stream (get-in @clients [client-id :in])))
@@ -34,31 +34,41 @@
   "Stop step coordinator."
   []
   (swap! server-socket #(when % (.close %)))
-  (reset! clients nil)
-  (error-tracker/reset))
+  (reset! clients nil))
 
 (defn drive-step
   "Find a jukebox language client that knows about `step`, and ask for it to be run."
   [step-registry id board args]
-  (with-error-tracking
-    (let [client-id (get (:callbacks step-registry) id)]
-      (assert client-id)
+  (let [forwarder (get-in step-registry [:callbacks id])]
+    (assert forwarder)
+    (apply forwarder board args)))
 
-      (send! client-id {:action :run
-                        :id id
-                        :board board
-                        :args args})
+(defn step-forwarder
+  "Forwards a request to execute a step to the right jukebox language client."
+  [id language client-id]
+  (fn run-step [board & args]
 
-      (let [result (recv! client-id)]
-        (case (:action result)
-          :result (:board result)
-          :error (let [e (RuntimeException. (str "Step exception: " (:error result)))]
-                   (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
-                   (throw e))
-          (throw (ex-info "Unknown message from client" {:message result})))))))
+    (send! client-id {:action :run
+                      :id id
+                      :board board
+                      :args args})
+
+    (let [result (recv! client-id)]
+      (case (:action result)
+        :result (:board result)
+        :error (let [e (RuntimeException. (str "Step exception: " (:error result)))]
+                 (.setStackTrace e (into-array StackTraceElement (mapv stack-trace-element (:trace result))))
+                 (throw e))
+        (throw (ex-info "Unknown message from client" {:message result :language language}))))))
+
+(defn forwarder-by-id
+  "Returns a [step-id step-forwarder] pair."
+  [language client-id]
+  (fn [{:keys [id]}]
+    [id (step-forwarder id language client-id)]))
 
 (defn- language-client-configs
-  "Load language client configs from a json file named `.jukebox` on the classpath."
+  "Loads language client configs from a json file named '.jukebox'."
   []
   (let [project-configs   (into {} (-> (try (slurp ".jukebox") (catch Exception _ "{}"))
                                        (json/parse-string true)))
@@ -69,38 +79,37 @@
     (when (:languages project-configs)
       (filter #(project-languages (:language %)) language-clients))))
 
-(defn handle-client-registrations
-  "Handles client connections."
-  []
-  (try
-    (while (not (.isClosed @server-socket))
-      (let [socket (.accept @server-socket)
-            in     (DataInputStream. (.getInputStream socket))
-            out    (DataOutputStream. (.getOutputStream socket))
-            {:keys [client-id] :as message} (msg/unpack-stream in)]
-        (swap! clients assoc client-id {:socket socket :out out :in in})
-        (registration-tracker/register! message)))
-    (catch java.net.SocketException _
-      (log/debugf "Socket closed"))))
+(defn register-clients
+  "Accept incoming client connections and register steps."
+  [client-configs]
+  (dotimes [_ (count client-configs)]
+    (let [socket    (.accept @server-socket)
+          in        (DataInputStream. (.getInputStream socket))
+          out       (DataOutputStream. (.getOutputStream socket))
+          {:keys [client-id definitions language snippet]} (msg/unpack-stream in)
+          callbacks (into {} (map (forwarder-by-id language client-id) definitions))]
+      (swap! clients assoc client-id {:socket socket :out out :in in})
+      (swap! step-registry step-registry/merge language snippet definitions callbacks)))
+  @step-registry)
 
 (defn start
   "Starts the step coordinator."
   [glue-paths]
-  (let [client-configs (or (language-client-configs) (auto/detect {:clojure? true}))]
-    (reset! server-socket (ServerSocket. 0))
-    (registration-tracker/init client-configs)
-    (with-future-error-tracking
-      (handle-client-registrations))
-
+  (reset! server-socket (ServerSocket. 0))
+  (.setSoTimeout @server-socket 10000)
+  (let [client-configs       (or (language-client-configs) (auto/detect {:clojure? true}))
+        client-registrations (future (register-clients client-configs))]
     (doseq [client-config client-configs]
-      (with-future-error-tracking
-        (step-client/launch client-config (.getLocalPort @server-socket) glue-paths)))
+      (future
+        (try
+          (step-client/launch client-config (.getLocalPort @server-socket) glue-paths)
+          (catch Throwable e
+            (log/errorf e "Error while launching jukebox language client")))))
 
-    (registration-tracker/step-registry)))
+    @client-registrations))
 
 (defn restart
   "Restart the step coordinator."
   [glue-paths]
   (stop)
   (start glue-paths))
-

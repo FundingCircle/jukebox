@@ -2,7 +2,7 @@
 
 require 'active_support'
 require 'active_support/core_ext'
-require 'jukebox/client/step_registry'
+require 'jukebox/step_registry'
 require 'jukebox/client/step_scanner'
 require 'jukebox/core_ext/hash'
 require 'jukebox/msg'
@@ -17,7 +17,7 @@ module Jukebox
   class Client
     @local_board = {}
     @logger = Logger.new(STDOUT)
-    @logger.level = Logger::INFO
+    @logger.level = Logger::DEBUG
     $stdout.sync = true
 
     class << self
@@ -27,7 +27,7 @@ module Jukebox
           action: :error,
           message: exception.message,
           trace: exception.backtrace_locations&.map do |location|
-            @logger.debug("Backtrace class_name: #{location.label.class}")
+            # @logger.debug("Backtrace class_name: #{location.label.class}")
             { class_name: '' + location.label,
               file_name: '' + location.path,
               line_number: location.lineno,
@@ -45,7 +45,7 @@ module Jukebox
         message.merge!(action: :result, board: board)
         message
       rescue Exception => e
-        pp e
+        pp "EX: #{e}"
         error(message, e)
       end
 
@@ -72,7 +72,7 @@ module Jukebox
 
       Jukebox::Client::StepScanner.scan(glue_paths)
       @step_registry = nil
-      @definitions = Jukebox::Client::StepRegistry.instance.definitions
+      @definitions = Jukebox::StepRegistry.instance.definitions
     end
 
     # Client details for this jukebox client
@@ -90,20 +90,26 @@ module Jukebox
 
     # Connects to the jukebox coordinator and registers known step definitions.
     def connect(port)
-      @socket = TCPSocket.open('localhost', port)
-      send(client_info)
+      socket = TCPSocket.open('localhost', port)
+      @messenger = Jukebox::Messenger.new(socket)
+      @messenger.send(client_info)
+      @logger = Logger.new(STDOUT)
+      @logger.level = Logger::INFO
+      $stdout.sync = true
+
+      @logger.debug("Sent client info: #{client_info}")
       self
     end
 
     # Handles messages from the coordinator
     def handle_coordinator_messages
-      messages.each do |message|
+      @messenger.messages.each do |message|
         case message[:action]
-        when :run then send(Client.run(message))
+        when :run then @messenger.send(Client.run(message))
         else raise "Unknown action: #{message[:action]}"
         end
       rescue Exception => e
-        send(Client.error(message, e))
+        @messenger.send(Client.error(message, e))
       end
     end
   end

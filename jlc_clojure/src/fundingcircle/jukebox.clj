@@ -1,6 +1,6 @@
 (ns fundingcircle.jukebox
   "Defines the Jukebox DSL."
-  (:require [fundingcircle.jukebox.client.step-registry :as step-registry]
+  (:require [fundingcircle.jukebox.step-registry :as step-registry]
             [clojure.string :as str])
   (:import (java.util UUID)
            (cucumber.api PendingException)))
