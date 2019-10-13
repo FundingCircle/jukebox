@@ -18,7 +18,8 @@
                                          "--glue" "test/example"
                                          "--plugin" "json:cucumber.json"
                                          "--plugin" "pretty"
-                                         "test/features"]}
+                                         "test/features"]
+                             "inventory" ["run" "-m" "fundingcircle.jukebox.alias.inventory" "--glue" "test/example"]}
                    :source-paths ["src" "junit"]
                    :dependencies [[ch.qos.logback/logback-classic "1.2.3"]
                                   [net.mikera/cljunit "0.7.0"]]

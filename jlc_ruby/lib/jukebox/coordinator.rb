@@ -51,13 +51,19 @@ module Jukebox #:nodoc:
     end
 
     class StepError < StandardError
-      attr_reader :client_backtrace
+      attr_reader :exception
 
       def initialize(msg = nil, client_backtrace = nil)
-        puts "STEP ERROR TRACE: #{client_backtrace}"
-        # puts "STEP ERROR MSG: #{msg}"
-        @client_backtrace = client_backtrace
+        backtrace = client_backtrace&.reverse&.map(&method(:to_line))
+        @exception = StandardError.new(msg)
+        @exception.set_backtrace(backtrace)
         super(msg)
+      end
+
+      private
+
+      def to_line(entry)
+        "#{entry[:file_name]}:#{entry[:line_number]} in #{entry[:method_name]}"
       end
     end
 
@@ -66,7 +72,7 @@ module Jukebox #:nodoc:
 
       definitions.each do |id:, **definition|
         callback = proc do |board, *args|
-          @logger.debug("Forwarding step to jukebox language client (#{language}) #{client_id}")
+          # @logger.debug("Forwarding step to jukebox language client (#{language}) #{client_id}")
           messenger.send(action: :run,
                          id: id,
                          board: board,

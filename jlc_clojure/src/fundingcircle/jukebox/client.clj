@@ -93,5 +93,6 @@
 (defn start
   "Start this jukebox language client."
   [_client-config port glue-paths]
+  (println "clojure client starting: " glue-paths port)
   (handle-coordinator-messages (connect (create glue-paths) port)))
 

@@ -21,10 +21,11 @@
     (->>
      (interleave
       (repeat "--glue")
-      (or (:paths (slurp-deps))
+      (or (map #(.getAbsolutePath (io/file %)) (:paths (slurp-deps)))
+        #_(:paths (slurp-deps))
           ["src" "test" "src/main/clojure" "src/test/clojure"]))
      (into []))))
 
 (defn -main [& args]
-  (cucumber.api.cli.Main/main
-   (into-array String (concat (glue-paths args) args))))
+  (io.cucumber.core.cli.Main/main
+   (into-array String (concat ["file:."] args) #_ (concat (glue-paths args) args))))

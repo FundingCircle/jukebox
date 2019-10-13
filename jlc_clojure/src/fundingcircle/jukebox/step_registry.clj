@@ -6,7 +6,7 @@
 (defn create
   "Creates a step registry."
   []
-  {:snippets {} :definitions [] :callbacks {}})
+  {:snippets {} :definitions [] :callbacks {} :resources []})
 
 (defn definitions
   "Gets the step definitions that have been loaded."
@@ -20,11 +20,12 @@
 
 (defn merge
   "Merge step registry."
-  [step-registry language snippet definitions callbacks]
+  [step-registry language snippet definitions callbacks resources]
   (-> step-registry
       (update :snippets assoc language snippet)
       (update :definitions into definitions)
-      (update :callbacks clojure.core/merge callbacks)))
+      (update :callbacks clojure.core/merge callbacks)
+      (update :resources into resources)))
 
 (defn register-step
   "Registers a step or hook definition."

@@ -34,6 +34,7 @@
   "Stop step coordinator."
   []
   (swap! server-socket #(when % (.close %)))
+  (doseq [])
   (reset! clients nil))
 
 (defn drive-step
@@ -86,19 +87,20 @@
     (let [socket    (.accept @server-socket)
           in        (DataInputStream. (.getInputStream socket))
           out       (DataOutputStream. (.getOutputStream socket))
-          {:keys [client-id definitions language snippet]} (msg/unpack-stream in)
+          {:keys [client-id definitions language resources snippet]} (msg/unpack-stream in)
           callbacks (into {} (map (forwarder-by-id language client-id) definitions))]
       (swap! clients assoc client-id {:socket socket :out out :in in})
-      (swap! step-registry step-registry/merge language snippet definitions callbacks)))
+      (swap! step-registry step-registry/merge language snippet definitions callbacks resources)))
   @step-registry)
 
 (defn start
   "Starts the step coordinator."
   [glue-paths]
   (reset! server-socket (ServerSocket. 0))
-  (.setSoTimeout @server-socket 10000)
+  (.setSoTimeout @server-socket 30000)
   (let [client-configs       (or (language-client-configs) (auto/detect {:clojure? true}))
         client-registrations (future (register-clients client-configs))]
+    (println "Clients; " client-configs)
     (doseq [client-config client-configs]
       (future
         (try

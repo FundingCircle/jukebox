@@ -4,4 +4,4 @@
 
 (defn -main [& args]
   (cucumber.api.cli.Main/main
-   (into-array String (concat ["--glue" "regenerate-snippets"] args))))
+   (into-array String (concat ["--glue" "regenerate_snippets"] args))))

@@ -41,9 +41,9 @@ begin
   Jukebox::Coordinator.instance.start(feature_paths, glue_paths)
 rescue ::Jukebox::Coordinator::StepError => e
   puts e.message
-  pp e.message
-  puts "Backtrace: #{e.client_backtrace.class}"
-  pp e.client_backtrace.class
+  # pp e.message
+  # puts "Backtrace: #{e.client_backtrace.class}"
+  # pp e.client_backtrace.class
   e.client_backtrace.each do |backtrace_entry|
     puts backtrace_entry
   end

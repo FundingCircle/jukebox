@@ -40,7 +40,7 @@ module Jukebox
 
       # Runs a step or hook, returning a result or error response.
       def run(message)
-        @logger.debug("Running: #{message}")
+        # @logger.debug("Running: #{message}")
         board = StepRegistry.instance.run(message)
         message.merge!(action: :result, board: board)
         message

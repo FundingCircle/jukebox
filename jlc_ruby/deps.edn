@@ -1,0 +1,5 @@
+{:paths ["."]
+ :aliases
+ {:jukebox/client
+  {:main-opts ["-m" "fundingcircle.jukebox.alias.client"]
+   :extra-deps {:fundingcircle.jukebox {:local/root "../jlc_clojure"}}}}}
