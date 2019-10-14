@@ -7,3 +7,4 @@ bin/rspec
 .rspec
 .bundle
 Gemfile.lock
+.cpcache

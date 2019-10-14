@@ -3,9 +3,10 @@
 require 'rspec'
 require 'active_support/core_ext'
 require 'jukebox/client'
+require 'jukebox/step_registry'
 
 describe Jukebox::Client do
-  step_registry = Jukebox::Client::StepRegistry
+  step_registry = Jukebox::StepRegistry
 
   context 'jukebox client info' do
     it 'should include step definitions and template snippet' do

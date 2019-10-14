@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'active_support'
 require 'active_support/core_ext'
 require 'cucumber/cucumber_expressions/cucumber_expression'
 require 'cucumber/cucumber_expressions/regular_expression'

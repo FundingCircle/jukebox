@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'rspec'
-require 'jukebox/client/step_registry'
+require 'jukebox/step_registry'
 require 'jukebox/client/step_scanner'
 
 describe Jukebox::Client::StepScanner do
-  StepRegistry = Jukebox::Client::StepRegistry
+  StepRegistry = Jukebox::StepRegistry
   StepScanner = Jukebox::Client::StepScanner
 
   context 'a glue path is scanned for step definitions' do
