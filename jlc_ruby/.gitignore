@@ -1,0 +1,10 @@
+bin/rake
+bin/warble
+bin/bundle
+bin/htmldiff
+bin/ldiff
+bin/rspec
+.rspec
+.bundle
+Gemfile.lock
+.cpcache

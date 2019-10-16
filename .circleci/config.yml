@@ -58,7 +58,7 @@ jobs:
       - *git_restore_cache
       - *mvn_restore_cache
       - run:
-          lein test
+          cd clj_clojure && lein test
 
 workflows:
   version: 2

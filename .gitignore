@@ -1,5 +1,0 @@
-.lein*
-.nrepl-port
-cucumber.json
-pom.xml*
-target

@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'logger'
+require 'jukebox/client'
+require 'json'
+require 'optparse'
+
+@logger = Logger.new(STDOUT)
+@logger.level = Logger::INFO
+
+@logger.debug("GEM_PATH: #{ENV['GEM_PATH']}")
+
+cli_options = {}
+OptionParser.new do |opts|
+  opts.banner = 'Usage: jlc_ruby [options] <glue paths>'
+
+  opts.on('-p PORT', '--port PORT', Integer,
+          'Connect to step coordinator at PORT') do |port|
+    cli_options[:port] = port
+  end
+
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
+  end
+end.parse!
+
+glue_paths = ARGV
+
+raise OptionParser::MissingArgument, 'glue_paths' if glue_paths.empty?
+raise OptionParser::MissingArgument, 'port' if cli_options[:port].nil?
+
+$LOAD_PATH.unshift 'lib'
+Jukebox::Client.start(cli_options, cli_options[:port], glue_paths)
