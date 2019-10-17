@@ -8,7 +8,8 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [fundingcircle.jukebox :as jukebox :refer [JukeBackend]]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [clojure.set :as set])
   (:import [cucumber.runtime.snippets FunctionNameGenerator SnippetGenerator]
            io.cucumber.cucumberexpressions.ParameterTypeRegistry
            [io.cucumber.stepexpression ExpressionArgumentMatcher StepExpressionFactory TypeRegistry]
@@ -104,9 +105,28 @@
 
     ;; call step
     (try
+      ;; 1. Run receives first. the receives fn should inject fixtures into sut
+      ;; (if the fixtures aren't already present & can't be injected, then throw)
+      (when-let [receives-fn (:scene/receives step-meta)]
+        (swap! world (update-world (fn [world] (apply receives-fn
+                                                      (assoc world :scene/step step-meta)
+                                                      (map process-arg args))))))
+
+      ;; Run the real step fn
       (swap! world (update-world (fn [world] (apply step-fn
                                                     (assoc world :scene/step step-meta)
                                                     (map process-arg args)))))
+
+      ;; completed -> Compare with the output of provides
+      (when-let [provides-fn (:scene/provides step-meta)]
+        (let [expected (apply provides-fn
+                              (assoc @world :scene/step step-meta)
+                              (map process-arg args))
+              expected-fixtures (set (keys expected))
+              missing (set/difference expected-fixtures (set (keys @world)))]
+          (when missing
+            (log/errorf "Expected step to provide fixures, but they are missing: %s" missing))))
+
       (catch Throwable e
         (swap! world assoc :scene/exception e)))
 
@@ -114,8 +134,9 @@
     (doseq [{:keys [hook-fn]} (:after-step @definitions)]
       (swap! world (update-world (fn [world] (hook-fn world)))))
 
-    (when-let [e (:scene/exception @world)]
-      (throw e)))
+    (when-not (:scene/provides step-meta)
+      (when-let [e (:scene/exception @world)]
+        (throw e))))
 
   (isDefinedAt [_ stack-trace-element]
     (let [{:keys [file line]} (meta step-fn)]
