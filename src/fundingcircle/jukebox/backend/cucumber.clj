@@ -124,7 +124,7 @@
                               (map process-arg args))
               expected-fixtures (set (keys expected))
               missing (set/difference expected-fixtures (set (keys @world)))]
-          (when missing
+          (when-not (empty? missing)
             (log/errorf "Expected step to provide fixures, but they are missing: %s" missing))))
 
       (catch Throwable e
