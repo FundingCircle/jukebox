@@ -1,62 +1,67 @@
 version: 2.1
 
+references:
+  git_cache_key: &git_cache_key
+    v1-git-cache-{{ .Branch }}-{{ .Revision }}
+
+  mvn_cache_key: &mvn_cache_key
+    v1-dependency-cache-{{ checksum "project.clj" }}
+
 executors:
   clojure-lein:
     docker:
       - image: circleci/clojure:lein-2.8.3
     working_directory: ~/jukebox
 
-references:
-  git_cache_key: &git_cache_key
-    v1-git-cache-{{ .Branch }}-{{ .Revision }}
+commands:
+  git_save_cache:
+    steps:
+      - save_cache:
+          key: *git_cache_key
+          paths:
+            - .
 
-  git_save_cache: &git_save_cache
-    save_cache:
-      key: *git_cache_key
-      paths:
-        - .
+  git_restore_cache:
+    steps:
+      - restore_cache:
+          key: *git_cache_key
 
-  git_restore_cache: &git_restore_cache
-    restore_cache:
-      key: *git_cache_key
+  mvn_save_cache:
+    steps:
+      - save_cache:
+          key: *mvn_cache_key
+          paths:
+            - ~/.m2
 
-  mvn_cache_key: &mvn_cache_key
-    v1-dependency-cache-{{ checksum "project.clj" }}
-
-  mvn_save_cache: &mvn_save_cache
-    save_cache:
-      key: *mvn_cache_key
-      paths:
-        - ~/.m2
-
-  mvn_restore_cache: &mvn_restore_cache
-    restore_cache:
-      key: *mvn_cache_key
-      paths:
-        - ~/.m2
+  mvn_restore_cache:
+    steps:
+      - restore_cache:
+          key: *mvn_cache_key
+          paths:
+            - ~/.m2
 
 jobs:
   checkout_code:
     executor: clojure-lein
     steps:
-      - *git_restore_cache
+      - git_restore_cache
       - checkout
-      - *git_save_cache
+      - git_save_cache
 
   deps:
     executor: clojure-lein
     steps:
-      - *git_restore_cache
-      - *mvn_restore_cache
+      - git_restore_cache
+      - mvn_restore_cache
       - run:
           lein with-profiles +test deps
-      - *mvn_save_cache
+      - mvn_save_cache
 
   test:
     executor: clojure-lein
     steps:
-      - *git_restore_cache
-      - *mvn_restore_cache
+      - git_restore_cache
+      - mvn_restore_cache
       - run:
           lein test
 
