@@ -227,24 +227,32 @@
   "A jukebox cucumber backend."
   (->CucumberJukeBackend definitions))
 
+(def patterns (atom []))
+
 (defn- set-glue
   "Sets the cucumber glue instance. Registers any steps, before hooks
   and after hooks that were queued before glue was initialized."
   [{:keys [before-step after-step] :as definitions} glue]
   (let [{:keys [steps before after] :as definitions} (assoc definitions :glue glue)]
     (doseq [{:keys [pattern step-fn]} steps]
-      (add-step definitions pattern step-fn))
+      (if (not (#{pattern} @patterns))
+        (do
+          (swap! patterns (fn [x] conj x pattern))
+          (add-step definitions pattern step-fn))
+        ;; TODO - replace if this test works
+        (Thread/sleep 1000)))
     (doseq [{:keys [tags hook-fn]} before]
       (add-before-scene-hook definitions tags hook-fn))
     (doseq [{:keys [tags hook-fn]} after]
       (add-after-scene-hook definitions tags hook-fn)))
   {:glue glue :steps [] :before [] :after [] :before-step before-step :after-step after-step})
 
+
 (deftype ClojureFnName []
   cucumber.runtime.snippets.Concatenator
   (concatenate [_ words]
     (str/lower-case
-      (str/join "-" words))))
+     (str/join "-" words))))
 
 (deftype JukeCucumberSnippet [step]
   cucumber.runtime.snippets.Snippet
