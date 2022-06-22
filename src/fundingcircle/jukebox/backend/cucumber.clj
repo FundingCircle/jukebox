@@ -99,6 +99,9 @@
   (getParameterCount [_] nil)
 
   (execute [_ args]
+    ;; Set the step metadata up front so it is available even after an exception
+    (swap! world (assoc world :scene/step step-meta))
+
     ;; call before-steps
     (doseq [{:keys [hook-fn]} (:before-step @definitions)]
       (swap! world (update-world (fn [world] (hook-fn world)))))
@@ -109,18 +112,18 @@
       ;; (if the fixtures aren't already present & can't be injected, then throw)
       (when-let [receives-fn (:scene/receives step-meta)]
         (swap! world (update-world (fn [world] (apply receives-fn
-                                                      (assoc world :scene/step step-meta)
+                                                      world
                                                       (map process-arg args))))))
 
       ;; Run the real step fn
       (swap! world (update-world (fn [world] (apply step-fn
-                                                    (assoc world :scene/step step-meta)
+                                                    world
                                                     (map process-arg args)))))
 
       ;; completed -> Compare with the output of provides
       (when-let [provides-fn (:scene/provides step-meta)]
         (let [expected (apply provides-fn
-                              (assoc @world :scene/step step-meta)
+                              world
                               (map process-arg args))
               expected-fixtures (set (keys expected))
               missing (set/difference expected-fixtures (set (keys @world)))]
