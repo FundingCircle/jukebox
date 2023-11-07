@@ -1,10 +1,11 @@
-(defproject fundingcircle/jukebox "1.0.6"
+(defproject fundingcircle/jukebox "1.0.7"
   :description "A clojure BDD library that integrates with cucumber."
   :url "https://github.com/fundingcircle/jukebox/"
   :license {:name "BSD 3-clause"
             :url "http://opensource.org/licenses/BSD-3-Clause"}
-  :dependencies [[io.cucumber/cucumber-core "4.2.2"]
+  :dependencies [[io.cucumber/cucumber-core "4.2.2" :exclusions [io.cucumber/datatable]]
                  [io.cucumber/cucumber-junit "4.2.2"]
+                 [io.cucumber/datatable "7.14.0"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/tools.namespace "0.2.11"]
