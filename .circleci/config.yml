@@ -101,7 +101,8 @@ jobs:
   deploy_snapshot:
     <<: *deploy_config
     steps:
-      - <<: *restore_repo_cache
+      # - <<: *restore_repo_cache
+      - checkout
       - <<: *restore_mvn_cache
       - run:
           name: Deploy to Clojars
@@ -112,17 +113,17 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - checkout_code
-      - deps:
-          requires:
-            - checkout_code
-      - test:
-          requires:
-            - deps
+      # - checkout_code
+      # - deps:
+      #     requires:
+      #       - checkout_code
+      # - test:
+      #     requires:
+      #       - deps
       - deploy_snapshot:
           context: clojars-deploy
-          requires:
-            - test
+          # requires:
+          #   - test
           filters:
             tags:
               ignore: /.*/
