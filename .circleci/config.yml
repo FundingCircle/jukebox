@@ -2,63 +2,31 @@
 version: 2
 
 references:
-  repo_cache_key: &repo_cache_key
-    v1-jukebox-repo-{{ .Branch }}-{{ .Revision }}
-
-  repo_cache_backup_1: &repo_cache_backup_1
-    v1-jukebox-repo-{{ .Branch }}
-
-  repo_cache_backup_2: &repo_cache_backup_2
-    v1-jukebox-repo
-
-  restore_repo: &restore_repo
-    restore_cache:
-      keys:
-        - *repo_cache_key
-        - *repo_cache_backup_1
-        - *repo_cache_backup_2
-
-  git_cache_key: &git_cache_key
-    v1-git-cache-{{ .Branch }}-{{ .Revision }}
-
-  git_save_cache: &git_save_cache
+  save_repo_cache: &save_repo_cache
     save_cache:
-      key: *git_cache_key
+      key: v1-jukebox-repo-{{ .Branch }}
       paths:
         - .
 
-  git_restore_cache: &git_restore_cache
+  restore_repo_cache: &restore_repo_cache
     restore_cache:
-      key: *git_cache_key
+      key: v1-jukebox-repo-{{ .Branch }}
 
-  mvn_cache_key: &mvn_cache_key
-    v1-dependency-cache-{{ checksum "project.clj" }}
-
-  mvn_save_cache: &mvn_save_cache
+  save_mvn_cache: &save_mvn_cache
     save_cache:
-      key: *mvn_cache_key
+      key: v1-jukebox-deps-{{ checksum "project.clj" }}
       paths:
         - ~/.m2
 
-  mvn_cache_backup: &mvn_cache_backup
-    v1-jukebox-deps
-
-  mvn_restore_cache: &mvn_restore_cache
+  restore_mvn_cache: &restore_mvn_cache
     restore_cache:
-      key: *mvn_cache_key
-      paths:
-        - ~/.m2
-        -
+      keys:
+        - v1-jukebox-deps-{{ checksum "project.clj" }}
+
   deploy_config: &deploy_config
     docker:
       - image: circleci/clojure:lein-2.8.3
     working_directory: ~/jukebox
-
-  restore_mvn: &restore_mvn
-    restore_cache:
-      keys:
-        - *mvn_cache_key
-        - *mvn_cache_backup
 
   build_config: &build_config
     docker:
@@ -69,14 +37,14 @@ jobs:
   checkout_code:
     <<: *build_config
     steps:
-      - *git_restore_cache
+      - <<: *restore_repo_cache
       - checkout
-      - *git_save_cache
+      - <<: *save_repo_cache
 
   checkout_tags:
     <<: *deploy_config
     steps:
-      - *restore_repo
+      - <<: *restore_repo_cache
       # Workaround required for https://discuss.circleci.com/t/22437
       #
       # This is required to prevent the warning that appears about connecting
@@ -93,33 +61,30 @@ jobs:
           .circleci/bin/add-key github.com $GITHUB_SSH_FINGERPRINT
           git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
           git checkout --force "$CIRCLE_TAG"
-      - save_cache:
-          key: v1-jukebox-repo-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - .
+      - <<: *save_repo_cache
 
   deps:
     <<: *build_config
     steps:
-      - *git_restore_cache
-      - *mvn_restore_cache
+      - <<: *restore_repo_cache
+      - <<: *restore_mvn_cache
       - run:
           lein with-profiles +test deps
-      - *mvn_save_cache
+      - <<: *save_mvn_cache
 
   test:
     <<: *build_config
     steps:
-      - *git_restore_cache
-      - *mvn_restore_cache
+      - <<: *restore_repo_cache
+      - <<: *restore_mvn_cache
       - run:
           lein test
 
   deploy:
     <<: *deploy_config
     steps:
-      - *restore_repo
-      - *restore_mvn
+      - <<: *restore_repo_cache
+      - <<: *restore_mvn_cache
       - run:
           name: Prepare signing key
           command: |
@@ -130,14 +95,14 @@ jobs:
           command: |
             export LEIN_GPG=/home/circleci/jukebox/.circleci/bin/gpg
             export REAL_GPG=$(which gpg)
-            
+
             lein do jar, pom, deploy clojars
 
   deploy_snapshot:
     <<: *deploy_config
     steps:
-      - *restore_repo
-      - *restore_mvn
+      - <<: *restore_repo_cache
+      - <<: *restore_mvn_cache
       - run:
           name: Deploy to Clojars
           command: |
