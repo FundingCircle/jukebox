@@ -2,6 +2,22 @@
 version: 2
 
 references:
+  repo_cache_key: &repo_cache_key
+    v1-jukebox-repo-{{ .Branch }}-{{ .Revision }}
+
+  repo_cache_backup_1: &repo_cache_backup_1
+    v1-jukebox-repo-{{ .Branch }}
+
+  repo_cache_backup_2: &repo_cache_backup_2
+    v1-jukebox-repo
+
+  restore_repo: &restore_repo
+    restore_cache:
+      keys:
+        - *repo_cache_key
+        - *repo_cache_backup_1
+        - *repo_cache_backup_2
+
   git_cache_key: &git_cache_key
     v1-git-cache-{{ .Branch }}-{{ .Revision }}
 
@@ -24,11 +40,25 @@ references:
       paths:
         - ~/.m2
 
+  mvn_cache_backup: &mvn_cache_backup
+    v1-jukebox-deps
+
   mvn_restore_cache: &mvn_restore_cache
     restore_cache:
       key: *mvn_cache_key
       paths:
         - ~/.m2
+        -
+  deploy_config: &deploy_config
+    docker:
+      - image: circleci/clojure:lein-2.8.3
+    working_directory: ~/jukebox
+
+  restore_mvn: &restore_mvn
+    restore_cache:
+      keys:
+        - *mvn_cache_key
+        - *mvn_cache_backup
 
   build_config: &build_config
     docker:
@@ -42,6 +72,31 @@ jobs:
       - *git_restore_cache
       - checkout
       - *git_save_cache
+
+  checkout_tags:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      # Workaround required for https://discuss.circleci.com/t/22437
+      #
+      # This is required to prevent the warning that appears about connecting
+      # to a host for the first time when we attempt to fetch the tags from
+      # github.
+      #
+      # The `add-key` script checks the fingerprint of the ssh key returned
+      # by github against the fingerprint published below on their website
+      # to protect against MITM attacks
+      #
+      #  https://help.github.com/en/articles/githubs-ssh-key-fingerprints
+      #
+      - run: |
+          .circleci/bin/add-key github.com $GITHUB_SSH_FINGERPRINT
+          git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
+          git checkout --force "$CIRCLE_TAG"
+      - save_cache:
+          key: v1-jukebox-repo-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - .
 
   deps:
     <<: *build_config
@@ -60,16 +115,69 @@ jobs:
       - run:
           lein test
 
+  deploy:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - run:
+          name: Prepare signing key
+          command: |
+            echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+
+      - run:
+          name: Deploy to Clojars
+          command: |
+            export LEIN_GPG=/home/circleci/jukebox/.circleci/bin/gpg
+            export REAL_GPG=$(which gpg)
+            
+            lein do jar, pom, deploy clojars
+
+  deploy_snapshot:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - run:
+          name: Deploy to Clojars
+          command: |
+            [ -z "$CLOJARS_USERNAME" ] || lein do jar, pom, deploy clojars
+
 workflows:
   version: 2
-  build_and_deploy:
+  build_and_test:
     jobs:
       - checkout_code
       - deps:
-          context: org-global
           requires:
             - checkout_code
       - test:
-          context: org-global
           requires:
             - deps
+      - deploy_snapshot:
+          context: clojars-deploy
+          requires:
+            - test
+          filters:
+            tags:
+              ignore: /.*/
+            branches:
+              ignore: /master/
+
+  checkout_and_deploy:
+    jobs:
+      - checkout_tags:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+      - deploy:
+          context: clojars-deploy
+          requires:
+            - checkout_tags
+          filters:
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+            branches:
+              ignore: /.*/
