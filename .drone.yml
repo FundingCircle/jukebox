@@ -1,0 +1,22 @@
+---
+kind: pipeline
+type: docker
+name: test
+
+platform:
+  os: linux
+  arch: amd64
+
+concurrency:
+  limit: 1
+
+trigger:
+  event:
+    - push
+
+steps:
+  - name: test
+    image: clojure:lein-2.8.3
+    commands:
+      - lein with-profiles +test deps
+      - lein test
