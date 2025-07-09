@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  description: 'All the best songs. Discuss in #jukebox on Clojurians Slack.'
+  name: jukebox
+spec:
+  lifecycle: experimental
+  owner: group:team/apply
+  type: service
