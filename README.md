@@ -2,6 +2,9 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jukebox.svg)](https://clojars.org/fundingcircle/jukebox)
 
+> [!WARNING]
+> This project is no longer actively maintained. We recommend migrating to an alternative library for future development.
+
 This is a simple library that hooks clojure into BDD frameworks such
 as cucumber.
 
